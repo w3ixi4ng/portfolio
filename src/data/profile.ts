@@ -86,7 +86,9 @@ export const experience: Experience[] = [
     role:    'Software Engineer Intern',
     period:  'May 2026 – Present',
     bullets: [
-      'TBC'
+      'Kubernetes-based deployment pipelines for government services',
+      'OpenBao for secrets management — centralised vault for credentials and API keys',
+      'SPIFFE/SPIRE for workload identity — zero-trust service-to-service authentication',
     ],
   },
   {

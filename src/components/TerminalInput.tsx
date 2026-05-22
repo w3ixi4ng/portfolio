@@ -15,7 +15,7 @@ const COMMANDS = [
   'help', 'ls', 'projects', 'pwd', 'skills', 'sudo', 'whoami',
 ]
 
-export function TerminalInput({ cwd, onSubmit, inputHistory, onHistoryNavigate }: Props) {
+export function TerminalInput({ cwd, onSubmit, onHistoryNavigate }: Props) {
   const [value, setValue] = useState('')
   const [tabHints, setTabHints] = useState<string[]>([])
   const inputRef = useRef<HTMLInputElement>(null)

@@ -95,7 +95,8 @@ export function PixelDuck() {
       const flip = vx < 0
       const rows = FRAMES[frameIdx]
 
-      ctx.clearRect(0, 0, c.width, c.height)
+      const ct = ctx!
+      ct.clearRect(0, 0, c.width, c.height)
       rows.forEach((row, ry) => {
         const len = row.length
         for (let col = 0; col < len; col++) {
@@ -103,8 +104,8 @@ export function PixelDuck() {
           if (ch === ' ') continue
           const color = COLOR[ch]
           if (!color) continue
-          ctx.fillStyle = color
-          ctx.fillRect(Math.round(x + col * SZ), Math.round(y + ry * SZ), SZ, SZ)
+          ct.fillStyle = color
+          ct.fillRect(Math.round(x + col * SZ), Math.round(y + ry * SZ), SZ, SZ)
         }
       })
 
