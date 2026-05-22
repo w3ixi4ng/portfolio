@@ -27,7 +27,7 @@ type WinState = 'open' | 'docked' | 'closed'
 
 const APP_META: Record<AppId, { title: string; w: number; h: number }> = {
   terminal:   { title: TERMINAL_TITLE, w: 720, h: 560 },
-  resume:     { title: 'resume.pdf',   w: 700, h: 600 },
+  resume:     { title: 'Lau_Wei_Xiang.pdf', w: 700, h: 600 },
   experience: { title: 'Experience',  w: 660, h: 480 },
   projects:   { title: 'Projects',    w: 700, h: 520 },
   skills:     { title: 'Skills',      w: 600, h: 480 },
