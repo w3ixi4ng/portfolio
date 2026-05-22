@@ -158,26 +158,28 @@ export function runCommand(raw: string, cwd: string): { output: React.ReactNode;
       return runCommand('cat contact.txt', '~')
 
     case 'projects': {
-      const bidly     = resolveNode('projects/bidly.txt')
-      const smux      = resolveNode('projects/smuxchange.txt')
+      const dir = resolveNode('projects')
+      if (!dir || dir.type !== 'dir' || !dir.children) return { output: null }
       return {
         output: (
           <div className="alias-stack">
-            {bidly?.content}
-            {smux?.content}
+            {Object.values(dir.children).map((node, i) =>
+              node.type === 'file' ? <div key={i}>{node.content}</div> : null
+            )}
           </div>
         ),
       }
     }
 
     case 'experience': {
-      const pca = resolveNode('experience/pca-internship.txt')
-      const ta  = resolveNode('experience/smu-ta.txt')
+      const dir = resolveNode('experience')
+      if (!dir || dir.type !== 'dir' || !dir.children) return { output: null }
       return {
         output: (
           <div className="alias-stack">
-            {pca?.content}
-            {ta?.content}
+            {Object.values(dir.children).map((node, i) =>
+              node.type === 'file' ? <div key={i}>{node.content}</div> : null
+            )}
           </div>
         ),
       }
