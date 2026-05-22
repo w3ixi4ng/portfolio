@@ -9,7 +9,7 @@ export function SkillsPane() {
           <div className="skills-section-label">{sec.label}</div>
           <div className="skill-tags">
             {sec.skills.map(s => (
-              <SkillTag key={s.name} icon={s.icon} label={s.name} />
+              <SkillTag key={s.name} icon={s.icon} label={s.name} color={s.color} />
             ))}
           </div>
         </div>

@@ -19,7 +19,7 @@ export const profile = {
   gpa:           '4.0/4.0',
   gpaLabel:      'GPA 4.0/4.0',
   honors:        'Summa Cum Laude · Highest Distinction',
-  scholarship:   "SMU Merit Scholarship · SCIS Dean's List AY 2024/2025",
+  scholarship:   "SMU Merit Scholarship · SCIS Dean's List",
 
   // Bio
   bio: 'Full-stack developer with experience in microservices and cloud deployment. Currently studying at SMU while building real-world systems.',
@@ -119,5 +119,5 @@ export const skills = {
   languages:  ['Python', 'Java', 'JavaScript', 'TypeScript', 'PHP', 'HTML', 'CSS', 'SQL'],
   frameworks: ['FastAPI', 'Flask', 'React.js', 'Vue.js', 'Node.js', 'Tailwind CSS', 'Bootstrap', 'Pandas'],
   tools:      ['Docker', 'Kubernetes', 'RabbitMQ', 'Git'],
-  cloud:      ['AWS', 'Azure', 'Firebase', 'Vercel', 'Google Cloud'],
+  cloud:      ['AWS', 'Azure', 'Google Cloud'],
 }

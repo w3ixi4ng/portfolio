@@ -125,7 +125,7 @@ export const filesystem: Record<string, FileSystemNode> = {
           content: (
             <Panel title={`skills/${sec.label.toLowerCase()}`}>
               <div className="skill-tags">
-                {sec.skills.map(s => <SkillTag key={s.name} icon={s.icon} label={s.name} />)}
+                {sec.skills.map(s => <SkillTag key={s.name} icon={s.icon} label={s.name} color={s.color} />)}
               </div>
             </Panel>
           ),

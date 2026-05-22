@@ -93,8 +93,6 @@ export function runCommand(raw: string, cwd: string): { output: React.ReactNode;
               <div className="panel-row"><span className="panel-label t-dim">degree</span><span className="panel-value t-dim">{profile.degreeShort}</span></div>
               <div className="panel-row"><span className="panel-label t-dim">gpa</span><span className="panel-value">{green(profile.gpa)}</span></div>
               <div className="panel-row"><span className="panel-label t-dim">award</span><span className="panel-value t-dim">{profile.scholarship}</span></div>
-              <div className="panel-row"><span className="panel-label t-dim">stack</span><span className="panel-value t-dim">{profile.stack}</span></div>
-              <div className="panel-row"><span className="panel-label t-dim">cloud</span><span className="panel-value t-dim">{profile.cloud}</span></div>
 
             </div>
           </div>
