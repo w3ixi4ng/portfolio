@@ -16,6 +16,7 @@ import {
 import { daylight } from "@/lib/daylight";
 import { scrollState } from "@/lib/scrollState";
 import { mulberry32 } from "./CloudField";
+import { Blimp } from "./Blimp";
 import { HazeMaterial } from "./HazeMaterial";
 import { kitUrl, preloadKit, type KitName } from "./Kit";
 
@@ -436,6 +437,7 @@ export function CityBackdrop() {
       <group ref={trees}>
         <Treeline />
       </group>
+      <Blimp />
       <HazeWall />
     </group>
   );
