@@ -18,14 +18,6 @@ const BUILDINGS: KitName[] = [
 ];
 preloadKit(BUILDINGS);
 
-/** [x, z, radius] */
-const PONDS: [number, number, number][] = [
-  [-40, 22, 4.5],
-  [31, 38, 3.2],
-  [-58, -47, 5.5],
-  [62, 14, 3.8],
-];
-
 /**
  * The ground far below (CLAUDE.md §4: "visible the whole time … a tiny patchwork of fields").
  * Deterministic so server and client agree. Code-built placeholders; KayKit town blocks and
@@ -201,19 +193,6 @@ export function Ground() {
       ))}
 
       {settings.singaporeTouch && <HdbEstate />}
-
-      {/* a few ponds so the patchwork isn't only fields */}
-      {PONDS.map(([x, z, r], i) => (
-        <mesh key={i} rotation={[-Math.PI / 2, 0, 0]} position={[x, 0.08, z]} receiveShadow>
-          <circleGeometry args={[r, 28]} />
-          <meshStandardMaterial
-            color="#8DB9C9"
-            roughness={0.5}
-            onBeforeCompile={distanceHaze}
-            customProgramCacheKey={distanceHazeKey}
-          />
-        </mesh>
-      ))}
     </group>
   );
 }
