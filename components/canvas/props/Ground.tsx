@@ -206,7 +206,12 @@ export function Ground() {
       {PONDS.map(([x, z, r], i) => (
         <mesh key={i} rotation={[-Math.PI / 2, 0, 0]} position={[x, 0.08, z]} receiveShadow>
           <circleGeometry args={[r, 28]} />
-          <meshStandardMaterial color="#6FA7C2" roughness={0.25} />
+          <meshStandardMaterial
+            color="#8DB9C9"
+            roughness={0.5}
+            onBeforeCompile={distanceHaze}
+            customProgramCacheKey={distanceHazeKey}
+          />
         </mesh>
       ))}
     </group>

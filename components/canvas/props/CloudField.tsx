@@ -71,9 +71,9 @@ function buildPuffs(): Puff[] {
       });
     }
   };
-  for (let c = 0; c < 70; c++) {
+  for (let c = 0; c < 90; c++) {
     const angle = rand() * Math.PI * 2;
-    const radius = 7 + Math.sqrt(rand()) * 38;
+    const radius = 3.5 + Math.sqrt(rand()) * 40;
     clump(Math.cos(angle) * radius, 113 + rand() * 4, Math.sin(angle) * radius, 1.4 + rand() * 1.4);
   }
   // A few big puffs drifting level with the plane, off to the sides.

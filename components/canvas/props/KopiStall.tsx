@@ -125,7 +125,6 @@ export function KopiStall() {
       <WorldHtml position={[0, 2.35, 0.3]} visible={atDropzone}>
         <WorldSign
           label="Kopi"
-          sub="& teh"
           tone="cream"
           actionLabel="Walk over to the kopi stall for a drink"
           onClick={go}

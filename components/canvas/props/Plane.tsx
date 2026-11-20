@@ -3,10 +3,11 @@
 import { RoundedBox } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { useRef } from "react";
-import type { Group } from "three";
+import type { Group, MeshStandardMaterial } from "three";
 import { scrollState } from "@/lib/scrollState";
 import { palette } from "@/lib/theme";
 import { Jumper } from "../characters/Jumper";
+import { EXIT } from "../path";
 import { Matte } from "../Matte";
 
 const INK = palette.ink;
@@ -94,7 +95,14 @@ export function Plane({ rampOpen }: PlaneProps) {
   const ramp = useRef<Group>(null);
   const props = useRef<(Group | null)[]>([]);
 
+  const red = useRef<MeshStandardMaterial>(null);
+  const green = useRef<MeshStandardMaterial>(null);
+
   useFrame((_, delta) => {
+    // Jump light by the door: red while walking up to it, green when it's go time.
+    const go = scrollState.current >= EXIT.door;
+    if (red.current) red.current.emissiveIntensity = go ? 0.05 : 2.4;
+    if (green.current) green.current.emissiveIntensity = go ? 2.4 : 0.05;
     if (ramp.current) ramp.current.rotation.z = -1.75 * rampOpen();
     if (!scrollState.reducedMotion) {
       props.current.forEach((p) => {
@@ -177,12 +185,12 @@ export function Plane({ rampOpen }: PlaneProps) {
         <Matte color={TRIM} />
       </RoundedBox>
 
-      {/* nose, far quarter: low sill, curved windscreen, peach rim on top */}
-      <NoseWall from={Math.PI} len={Math.PI / 2} y={-0.02} h={0.55} color={WALL} />
-      <NoseWall from={Math.PI} len={Math.PI / 2} y={0.53} h={0.68} color={WALL} glass />
-      <NoseRim from={Math.PI / 2} len={Math.PI / 2} y={0.55} />
-      <NoseRim from={Math.PI / 2} len={Math.PI / 2} y={WALL_H - 0.02} />
-      {[1.17, 1.33].map((k) => (
+      {/* nose: a full wrap-around windscreen over a low sill, peach rims, slim mullions */}
+      <NoseWall from={Math.PI} len={Math.PI} y={-0.02} h={0.55} color={WALL} />
+      <NoseWall from={Math.PI} len={Math.PI} y={0.53} h={0.68} color={WALL} glass />
+      <NoseRim from={Math.PI / 2} len={Math.PI} y={0.55} />
+      <NoseRim from={Math.PI / 2} len={Math.PI} y={WALL_H - 0.02} />
+      {[1.2, 1.4, 1.6, 1.8].map((k) => (
         <mesh
           key={k}
           position={[NOSE_X + NR * Math.sin(k * Math.PI), 0.87, NR * Math.cos(k * Math.PI)]}
@@ -191,9 +199,6 @@ export function Plane({ rampOpen }: PlaneProps) {
           <Matte color={TRIM} />
         </mesh>
       ))}
-      {/* nose, near quarter: low wall like the near side */}
-      <NoseWall from={(3 * Math.PI) / 2} len={Math.PI / 2} y={-0.02} h={0.32} color={WALL} />
-      <NoseRim from={Math.PI} len={Math.PI / 2} y={0.3} />
 
       {/* ---------------- outside: tail, wings, engines, ramp ---------------- */}
       <RoundedBox args={[0.9, 1.3, 0.14]} position={[1.75, 1.45, -0.9]} radius={0.06} castShadow>
@@ -234,6 +239,30 @@ export function Plane({ rampOpen }: PlaneProps) {
       </group>
 
       {/* ---------------- cabin ---------------- */}
+      {/* jump light on the far wall by the door */}
+      <group position={[1.55, 1.13, -0.88]}>
+        <RoundedBox args={[0.42, 0.22, 0.06]} radius={0.03}>
+          <Matte color={INK} />
+        </RoundedBox>
+        <mesh position={[-0.1, 0, 0.04]}>
+          <sphereGeometry args={[0.07, 14, 10]} />
+          <meshStandardMaterial
+            ref={red}
+            color="#FF5A4A"
+            emissive="#FF3B2F"
+            emissiveIntensity={2.4}
+          />
+        </mesh>
+        <mesh position={[0.1, 0, 0.04]}>
+          <sphereGeometry args={[0.07, 14, 10]} />
+          <meshStandardMaterial
+            ref={green}
+            color="#6BE38A"
+            emissive="#2FD05A"
+            emissiveIntensity={0.05}
+          />
+        </mesh>
+      </group>
       {/* padded jump bench along the far wall */}
       <RoundedBox args={[2.8, 0.1, 0.34]} position={[-0.6, 0.24, -0.76]} radius={0.04} castShadow>
         <Matte color="#B5824F" />
