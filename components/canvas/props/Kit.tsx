@@ -3,6 +3,7 @@
 import { Clone, useGLTF } from "@react-three/drei";
 import type { ThreeEvent } from "@react-three/fiber";
 import { Color, Mesh, MeshStandardMaterial, type Object3D } from "three";
+import { distanceHaze, distanceHazeKey } from "./distanceHaze";
 
 /** Every model built by `pnpm models` (scripts/build-models.mjs), as "<folder>/<name>". */
 export type KitName = `${
@@ -36,6 +37,9 @@ function grade(scene: Object3D) {
         m.color.multiply(WARM);
         m.roughness = Math.max(m.roughness, 0.7);
         m.metalness = 0;
+        // Far from the dropzone, fade into the haze like the ground does.
+        m.onBeforeCompile = distanceHaze;
+        m.customProgramCacheKey = distanceHazeKey;
       }
     }
   });

@@ -22,7 +22,7 @@ export function distanceHaze(shader: WebGLProgramParametersWithUniforms) {
     .replace(
       "#include <fog_fragment>",
       `#ifdef USE_FOG
-        float hzAmt = smoothstep(10.0, 34.0, length(vHazePos.xz));
+        float hzAmt = smoothstep(16.0, 40.0, length(vHazePos.xz));
         gl_FragColor.rgb = mix(gl_FragColor.rgb, fogColor, hzAmt);
       #endif
       #include <fog_fragment>`,
