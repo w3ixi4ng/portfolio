@@ -28,9 +28,25 @@ export function PigeonEgg() {
   const [hover, setHover] = useState(false);
   const [talking, talk] = useBlip(2500);
   useCursor(hover);
-  const { ref } = useZoneWindow(getZone("formation").start - 0.04, getZone("formation").end);
+  const FROM = getZone("formation").start - 0.06;
+  const TO = getZone("formation").end;
+  const { ref } = useZoneWindow(FROM, TO);
+  const flight = useRef<Group>(null);
 
   useFrame((state) => {
+    // Flies in from off to the side as you fall toward it, and flies off the other way
+    // before it would leave the window (no popping in or out).
+    const s = scrollState.current;
+    const ease = (a: number, b: number) => {
+      const k = Math.min(1, Math.max(0, (s - a) / (b - a)));
+      return k * k * (3 - 2 * k);
+    };
+    const inK = ease(FROM, FROM + 0.05);
+    const outK = ease(TO - 0.05, TO);
+    if (flight.current) {
+      flight.current.position.set((1 - inK) * -22 + outK * 22, (1 - inK) * 3 + outK * 3, 0);
+      flight.current.rotation.y = inK < 1 || outK > 0 ? Math.PI / 2 - Math.PI / 5 : 0;
+    }
     if (scrollState.reducedMotion) return;
     const t = state.clock.elapsedTime;
     if (body.current) body.current.position.y = Math.sin(t * 2) * 0.15;
@@ -47,66 +63,68 @@ export function PigeonEgg() {
 
   return (
     <group ref={ref} position={PIGEON_AT} scale={1.3}>
-      <group
-        ref={body}
-        rotation={[0, Math.PI / 5, 0]}
-        onClick={(e) => {
-          e.stopPropagation();
-          poke();
-        }}
-        onPointerOver={() => setHover(true)}
-        onPointerOut={() => setHover(false)}
-      >
-        <mesh scale={[0.42, 0.34, 0.6]} castShadow>
-          <sphereGeometry args={[1, 18, 14]} />
-          <Matte color="#9AA0AA" />
-        </mesh>
-        <mesh position={[0, 0.28, 0.42]} castShadow>
-          <sphereGeometry args={[0.22, 16, 12]} />
-          <Matte color="#6E8F86" />
-        </mesh>
-        {/* big confused eyes, slightly mismatched */}
-        {[
-          [-0.11, 0.36, 0.6, 0.07],
-          [0.11, 0.33, 0.6, 0.055],
-        ].map(([x, y, z, r], i) => (
-          <group key={i} position={[x, y, z]}>
-            <mesh>
-              <sphereGeometry args={[r, 12, 10]} />
-              <meshBasicMaterial color="#ffffff" />
-            </mesh>
-            <mesh position={[i ? -0.01 : 0.02, 0, r * 0.7]}>
-              <sphereGeometry args={[r * 0.45, 10, 8]} />
-              <meshBasicMaterial color={palette.ink} />
-            </mesh>
-          </group>
-        ))}
-        <mesh position={[0, 0.24, 0.66]} rotation={[Math.PI / 2, 0, 0]}>
-          <coneGeometry args={[0.05, 0.16, 8]} />
-          <Matte color={palette.canopyYellow} />
-        </mesh>
-        {[-1, 1].map((side, i) => (
-          <group
-            key={side}
-            ref={(g) => {
-              wings.current[i] = g;
-            }}
-            position={[side * 0.34, 0.1, 0]}
-          >
-            <RoundedBox args={[0.6, 0.05, 0.42]} position={[side * 0.3, 0, 0]} radius={0.02}>
-              <Matte color="#8A909B" />
-            </RoundedBox>
-          </group>
-        ))}
+      <group ref={flight}>
+        <group
+          ref={body}
+          rotation={[0, Math.PI / 5, 0]}
+          onClick={(e) => {
+            e.stopPropagation();
+            poke();
+          }}
+          onPointerOver={() => setHover(true)}
+          onPointerOut={() => setHover(false)}
+        >
+          <mesh scale={[0.42, 0.34, 0.6]} castShadow>
+            <sphereGeometry args={[1, 18, 14]} />
+            <Matte color="#9AA0AA" />
+          </mesh>
+          <mesh position={[0, 0.28, 0.42]} castShadow>
+            <sphereGeometry args={[0.22, 16, 12]} />
+            <Matte color="#6E8F86" />
+          </mesh>
+          {/* big confused eyes, slightly mismatched */}
+          {[
+            [-0.11, 0.36, 0.6, 0.07],
+            [0.11, 0.33, 0.6, 0.055],
+          ].map(([x, y, z, r], i) => (
+            <group key={i} position={[x, y, z]}>
+              <mesh>
+                <sphereGeometry args={[r, 12, 10]} />
+                <meshBasicMaterial color="#ffffff" />
+              </mesh>
+              <mesh position={[i ? -0.01 : 0.02, 0, r * 0.7]}>
+                <sphereGeometry args={[r * 0.45, 10, 8]} />
+                <meshBasicMaterial color={palette.ink} />
+              </mesh>
+            </group>
+          ))}
+          <mesh position={[0, 0.24, 0.66]} rotation={[Math.PI / 2, 0, 0]}>
+            <coneGeometry args={[0.05, 0.16, 8]} />
+            <Matte color={palette.canopyYellow} />
+          </mesh>
+          {[-1, 1].map((side, i) => (
+            <group
+              key={side}
+              ref={(g) => {
+                wings.current[i] = g;
+              }}
+              position={[side * 0.34, 0.1, 0]}
+            >
+              <RoundedBox args={[0.6, 0.05, 0.42]} position={[side * 0.3, 0, 0]} radius={0.02}>
+                <Matte color="#8A909B" />
+              </RoundedBox>
+            </group>
+          ))}
+        </group>
+        <WorldHtml position={[0, 0.8, -0.6]} visible={talking}>
+          <SpeechBubble>
+            <p className="font-bold">{EGG_COPY.pigeon}</p>
+          </SpeechBubble>
+        </WorldHtml>
+        <WorldHtml position={[0, -0.5, 0]} visible={!talking}>
+          <EggButton label="Say hi to the pigeon" onClick={poke} />
+        </WorldHtml>
       </group>
-      <WorldHtml position={[0, 0.8, -0.6]} visible={talking}>
-        <SpeechBubble>
-          <p className="font-bold">{EGG_COPY.pigeon}</p>
-        </SpeechBubble>
-      </WorldHtml>
-      <WorldHtml position={[0, -0.5, 0]} visible={!talking}>
-        <EggButton label="Say hi to the pigeon" onClick={poke} />
-      </WorldHtml>
     </group>
   );
 }

@@ -52,6 +52,20 @@ export const FOOTPRINTS: [number, number, number][] = [
   [...P(281, 23), 1.6], // barrels + box
   [...P(278, 26.5), 2.4], // van
 ];
+/** A little village of KayKit houses (bearing ~300-335 deg and ~95-120 deg). */
+const VILLAGE: [KitName, number, number, number][] = [
+  ["city/building_A", ...P(302, 27), 0.4],
+  ["city/building_C", ...P(309, 31), 1.1],
+  ["city/building_B", ...P(316, 27.5), -0.3],
+  ["city/building_E", ...P(323, 31.5), 0.8],
+  ["city/building_D", ...P(331, 28), 0.2],
+  ["city/building_G", ...P(96, 30), -0.6],
+  ["city/building_H", ...P(104, 34), 0.3],
+  ["city/building_F", ...P(112, 30.5), 1.4],
+  ["city/building_A", ...P(120, 34.5), -0.2],
+];
+FOOTPRINTS.push(...VILLAGE.map(([, x, z]): [number, number, number] => [x, z, 2.8]));
+
 export const inFootprint = (x: number, z: number, pad = 0) =>
   FOOTPRINTS.some(([fx, fz, r]) => Math.hypot(x - fx, z - fz) < r + pad);
 
@@ -69,8 +83,8 @@ for (let row = 0; row < 6; row++) {
 }
 /** Two windmills standing in a neat row just behind the barn, facing the camera. */
 const WINDMILLS: [number, number, number][] = [
-  [...P(207, 33.5), Math.PI / 4],
-  [...P(219, 34), Math.PI / 4],
+  [...P(207, 33.5), (3 * Math.PI) / 4],
+  [...P(219, 34), (3 * Math.PI) / 4],
 ];
 const BALES: [number, number, number][] = [
   [...P(198, 20.5), 0.2],
@@ -80,7 +94,7 @@ const BALES: [number, number, number][] = [
 
 function Barn() {
   return (
-    <group position={[P(214, 30)[0], 0, P(214, 30)[1]]} rotation={[0, 0.9, 0]}>
+    <group position={[P(214, 30)[0], 0, P(214, 30)[1]]} rotation={[0, -Math.PI / 4, 0]}>
       <RoundedBox args={[3.2, 2.2, 2.6]} position={[0, 1.1, 0]} radius={0.08} castShadow>
         <Matte color="#B9483A" />
       </RoundedBox>
@@ -205,6 +219,31 @@ function Camp() {
     </group>
   );
 }
+
+/* ------------------------------------------------------------------ woods */
+
+const WOOD_KINDS: KitName[] = [
+  "nature/tree_oak",
+  "nature/tree_default",
+  "nature/tree_fat",
+  "nature/tree_pineRoundA",
+  "nature/tree_detailed",
+];
+/** Clumps of trees filling the open ground behind the hangars (the finale's middle distance). */
+const WOODS: [KitName, number, number, number, number][] = (() => {
+  const r = mulberry32(919);
+  const out: [KitName, number, number, number, number][] = [];
+  for (let i = 0; i < 70; i++) {
+    const deg = 150 + r() * 150;
+    const dist = 27 + r() * 14;
+    const [x, z] = P(deg, dist);
+    if (inFootprint(x, z, 1.8)) continue;
+    if (out.some(([, ox, oz]) => Math.hypot(ox - x, oz - z) < 2.4)) continue;
+    out.push([WOOD_KINDS[i % WOOD_KINDS.length], x, z, r() * Math.PI * 2, 2.6 + r() * 1.2]);
+  }
+  return out;
+})();
+FOOTPRINTS.push(...WOODS.map(([, x, z]): [number, number, number] => [x, z, 1.6]));
 
 /* ------------------------------------------------------------------ hills */
 
@@ -392,6 +431,14 @@ preloadKit([
   "car/van",
   "car/tractor",
   "car/truck-flat",
+  "city/building_A",
+  "city/building_B",
+  "city/building_C",
+  "city/building_D",
+  "city/building_E",
+  "city/building_F",
+  "city/building_G",
+  "city/building_H",
   "kenney/mug",
   "misc/small-airplane-balak",
 ]);
@@ -400,12 +447,12 @@ export function DropzoneSurroundings() {
   return (
     <group>
       {/* farm */}
-      <mesh position={[FARM_C[0] + 0.1, 0.08, FARM_C[1] + 0.1]} receiveShadow>
+      <mesh position={[FARM_C[0] + 0.1, 0.22, FARM_C[1] + 0.1]} receiveShadow>
         <boxGeometry args={[11, 0.04, 8.6]} />
         <Matte color={palette.earth} />
       </mesh>
       {CROPS.map(([name, x, z], i) => (
-        <Kit key={i} name={name} position={[x, 0.1, z]} scale={1.5} />
+        <Kit key={i} name={name} position={[x, 0.24, z]} scale={1.5} />
       ))}
       <Barn />
       <Kit
@@ -437,6 +484,12 @@ export function DropzoneSurroundings() {
       ))}
 
       <Camp />
+      {VILLAGE.map(([name, x, z, r], i) => (
+        <Kit key={`v${i}`} name={name} position={[x, 0, z]} rotation={[0, r, 0]} scale={2.4} />
+      ))}
+      {WOODS.map(([name, x, z, rot, sc], i) => (
+        <Kit key={`w${i}`} name={name} position={[x, 0, z]} rotation={[0, rot, 0]} scale={sc} />
+      ))}
       <Hills />
       <SkyLife />
     </group>

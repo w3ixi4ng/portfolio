@@ -33,7 +33,17 @@ export function distanceHaze(shader: WebGLProgramParametersWithUniforms) {
       hzDeg = hzDeg < 0.0 ? hzDeg + 360.0 : hzDeg;
       float hzSink = uHazeAmount * step(38.0, length(vHazePos.xz))
         * step(165.0, hzDeg) * step(hzDeg, 285.0);
-      transformed.y *= 1.0 - hzSink;`,
+      // Sink in WORLD space (local y is not "up" for rotated meshes such as the ground disc,
+      // where squashing local y skewed the whole disc and washed it out).
+      if (hzSink > 0.0) {
+        vec4 hw = modelMatrix * hz;
+        hw.y *= 1.0 - hzSink;
+        mat4 hzM = modelMatrix;
+        #ifdef USE_INSTANCING
+          hzM = modelMatrix * instanceMatrix;
+        #endif
+        transformed = (inverse(hzM) * hw).xyz;
+      }`,
     );
   shader.fragmentShader = shader.fragmentShader
     .replace(

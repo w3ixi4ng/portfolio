@@ -94,8 +94,8 @@ function build() {
       const w = CELL - 1.2 - rand() * 1.4;
       const d = CELL - 1.2 - rand() * 1.4;
       fields.push({
-        position: [cx + (rand() - 0.5) * 0.6, 0.03, cz + (rand() - 0.5) * 0.6],
-        scale: [w, 0.06, d],
+        position: [cx + (rand() - 0.5) * 0.6, 0.05, cz + (rand() - 0.5) * 0.6],
+        scale: [w, 0.08, d],
         color: FIELD_COLORS[Math.floor(rand() * FIELD_COLORS.length)],
       });
       // Hedgerow trees along some field edges.
@@ -137,7 +137,7 @@ export function Ground() {
     <group>
       {/* base grass, wide enough to fill the view from 13,000 ft */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <circleGeometry args={[1400, 64]} />
+        <circleGeometry args={[560, 64]} />
         <meshStandardMaterial
           color={palette.grass}
           roughness={1}
@@ -161,8 +161,8 @@ export function Ground() {
 
       {/* country roads */}
       {ROADS_X.map((x) => (
-        <mesh key={`x${x}`} position={[x, 0.05, 0]} receiveShadow>
-          <boxGeometry args={[1.6, 0.04, HALF * CELL * 2]} />
+        <mesh key={`x${x}`} position={[x, 0.14, 0]} receiveShadow>
+          <boxGeometry args={[1.6, 0.08, HALF * CELL * 2]} />
           <meshStandardMaterial
             color={palette.terrazzo}
             roughness={0.95}
@@ -172,8 +172,8 @@ export function Ground() {
         </mesh>
       ))}
       {ROADS_Z.map((z) => (
-        <mesh key={`z${z}`} position={[0, 0.06, z]} receiveShadow>
-          <boxGeometry args={[HALF * CELL * 2, 0.04, 1.6]} />
+        <mesh key={`z${z}`} position={[0, 0.15, z]} receiveShadow>
+          <boxGeometry args={[HALF * CELL * 2, 0.1, 1.6]} />
           <meshStandardMaterial
             color={palette.terrazzo}
             roughness={0.95}
