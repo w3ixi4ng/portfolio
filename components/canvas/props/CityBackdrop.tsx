@@ -77,7 +77,9 @@ function winLights(shader: WebGLProgramParametersWithUniforms) {
       "#include <emissivemap_fragment>",
       `#include <emissivemap_fragment>
       #ifdef USE_MAP
-        vec3 tex = texture2D(map, vMapUv).rgb;
+        // Read the face's colour swatch at full resolution: with mip filtering, distant
+        // panes blend with their frames and flip in and out of "glass" as the view shifts.
+        vec3 tex = textureLod(map, vMapUv, 0.0).rgb;
         // Soft mask, so filtered texel edges fade instead of sparkling.
         float glass = smoothstep(0.12, 0.3, tex.b - tex.r) * smoothstep(-0.06, 0.04, tex.g - tex.r);
         // One cell ~ one flat (object space, so it never shifts as things move).

@@ -44,8 +44,11 @@ export function CameraRig() {
     if (!scrollState.reducedMotion) {
       // Slow drift: a degree or two, so it feels alive but never spins.
       const time = state.clock.elapsedTime;
-      pitch += Math.sin(time * 0.31) * 0.8;
-      yaw += Math.sin(time * 0.23) * 1.5;
+      // ...but not on the ground: the finale is a still diorama, and drifting slid the
+      // skyline's small lit windows across pixels so they twinkled.
+      const sway = 1 - Math.min(1, Math.max(0, (t - 0.93) / 0.05));
+      pitch += Math.sin(time * 0.31) * 0.8 * sway;
+      yaw += Math.sin(time * 0.23) * 1.5 * sway;
     }
     const distance = orbit.z * (portrait ? PORTRAIT_DISTANCE : 1);
     orbitDirection(pitch, yaw, dir);
