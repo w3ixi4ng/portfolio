@@ -94,7 +94,7 @@ const BALES: [number, number, number][] = [
 
 function Barn() {
   return (
-    <group position={[P(214, 30)[0], 0, P(214, 30)[1]]} rotation={[0, -Math.PI / 4, 0]}>
+    <group position={[P(214, 30)[0], 0, P(214, 30)[1]]} rotation={[0, 0.9, 0]}>
       <RoundedBox args={[3.2, 2.2, 2.6]} position={[0, 1.1, 0]} radius={0.08} castShadow>
         <Matte color="#B9483A" />
       </RoundedBox>
@@ -224,22 +224,28 @@ function Camp() {
 
 const WOOD_KINDS: KitName[] = [
   "nature/tree_oak",
+  "nature/plant_bushLarge",
   "nature/tree_default",
   "nature/tree_fat",
   "nature/tree_pineRoundA",
+  "nature/plant_bush",
   "nature/tree_detailed",
+  "nature/plant_bushLarge",
 ];
 /** Clumps of trees filling the open ground behind the hangars (the finale's middle distance). */
 const WOODS: [KitName, number, number, number, number][] = (() => {
   const r = mulberry32(919);
   const out: [KitName, number, number, number, number][] = [];
-  for (let i = 0; i < 70; i++) {
+  for (let i = 0; i < 110; i++) {
     const deg = 150 + r() * 150;
     const dist = 27 + r() * 14;
     const [x, z] = P(deg, dist);
     if (inFootprint(x, z, 1.8)) continue;
-    if (out.some(([, ox, oz]) => Math.hypot(ox - x, oz - z) < 2.4)) continue;
-    out.push([WOOD_KINDS[i % WOOD_KINDS.length], x, z, r() * Math.PI * 2, 2.6 + r() * 1.2]);
+    if (out.some(([, ox, oz]) => Math.hypot(ox - x, oz - z) < 2)) continue;
+    const kind = WOOD_KINDS[i % WOOD_KINDS.length];
+    // bushes get bigger so they read from the dropzone
+    const sc = kind.includes("plant_bush") ? 3.2 + r() * 1.4 : 2.6 + r() * 1.2;
+    out.push([kind, x, z, r() * Math.PI * 2, sc]);
   }
   return out;
 })();
@@ -377,7 +383,7 @@ function Birds() {
     });
   });
   return (
-    <group ref={g} rotation={[0, -Math.PI / 4, 0]}>
+    <group ref={g} rotation={[0, 0.9, 0]}>
       {[
         [0, 0],
         [-0.8, 0.7],

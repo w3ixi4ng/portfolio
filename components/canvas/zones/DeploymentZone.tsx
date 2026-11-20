@@ -80,7 +80,7 @@ export function DeploymentZone() {
   const activeZone = useAppStore((s) => s.activeZone);
   const openPanel = useAppStore((s) => s.openPanel);
 
-  useFrame((_, delta) => {
+  useFrame((state, delta) => {
     const g = canopyRef.current;
     if (!g) return;
     const t = scrollState.current;
@@ -93,12 +93,29 @@ export function DeploymentZone() {
     g.position.copy(avatar);
 
     const reserveOut = useAppStore.getState().reserve;
-    // Cutaway: the main releases, flutters up and away and folds down to nothing.
-    easing.damp(cut, "k", reserveOut ? 1 : 0, scrollState.reducedMotion ? 0.001 : 0.6, delta);
-    g.position.x -= cut.k * 2.4;
-    g.position.y += cut.k * 3.2;
-    g.rotation.z = cut.k * 1.1;
+    // Cutaway: the released main tumbles straight at the viewer and "hits" the screen
+    // (it's gone just before reaching the camera). Reduced motion: it simply vanishes.
+    cut.k = reserveOut ? Math.min(1, cut.k + delta / 1.3) : 0;
+    const flying = reserveOut && !scrollState.reducedMotion && cut.k < 0.97;
+    if (reserveOut && cut.k > 0) {
+      const k = cut.k * cut.k; // accelerates toward the lens
+      const cam = state.camera.position;
+      g.position.set(
+        avatar.x + (cam.x - avatar.x) * k,
+        avatar.y + 1.2 * Math.sin(cut.k * Math.PI) + (cam.y - avatar.y) * k,
+        avatar.z + (cam.z - avatar.z) * k,
+      );
+      g.rotation.set(Math.sin(cut.k * 9) * 0.5, Math.PI / 4 + cut.k * 2.5, cut.k * 3.2);
+    } else {
+      g.rotation.set(0, Math.PI / 4, 0);
+    }
+    if (flying) {
+      g.scale.setScalar(1);
+      scale.x = scale.y = 1;
+      return;
+    }
     const target = open && !reserveOut ? 1 : 0.01;
+    if (reserveOut) scale.x = scale.y = 0.01;
     if (scrollState.reducedMotion) {
       scale.x = scale.y = target;
     } else {

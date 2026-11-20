@@ -80,6 +80,8 @@ export function Avatar() {
   useCursor(hoverMe && phase === "canopy" && !reserve);
   const twistPending = useRef(false);
   const twistAt = useRef(-10);
+  const phaseNow = useRef<Phase | null>(null);
+  const pokeRef = useRef<() => void>(() => {});
   const egg = useEgg();
   const island = islandIndex >= 0 ? ISLANDS[islandIndex] : null;
 
@@ -91,10 +93,11 @@ export function Avatar() {
       if (next === last) return;
       if (next === "canopy" && last === "freefall") {
         sfx.canopy();
-        // Easter egg #6: rare (1 in 10) line twists right after opening. `?twists` forces it in dev.
+        // Easter egg #6: line twists (1 in 3) right after opening, which end in a reserve
+        // ride (cutaway). `?twists` forces it in dev.
         const force =
           process.env.NODE_ENV !== "production" && window.location.search.includes("twists");
-        if (force || Math.random() < 0.1) {
+        if (force || Math.random() < 1 / 3) {
           twistPending.current = true;
           setTwisting(true);
           egg("line-twists");
@@ -103,6 +106,7 @@ export function Avatar() {
       if (next !== "canopy" && next !== "landed" && useAppStore.getState().reserve)
         useAppStore.getState().setReserve(false);
       last = next;
+      phaseNow.current = next;
       setPhase(next);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- egg() is stable
@@ -110,7 +114,11 @@ export function Avatar() {
 
   useEffect(() => {
     if (!twisting) return;
-    const t = window.setTimeout(() => setTwisting(false), 2600);
+    const t = window.setTimeout(() => {
+      setTwisting(false);
+      // The twists didn't clear: cut away and ride the reserve (still under canopy only).
+      if (phaseNow.current === "canopy" && !useAppStore.getState().reserve) pokeRef.current();
+    }, 2600);
     return () => window.clearTimeout(t);
   }, [twisting]);
 
@@ -131,6 +139,9 @@ export function Avatar() {
     showReserve();
     useAppStore.getState().setReserve(true);
   };
+  useEffect(() => {
+    pokeRef.current = poke;
+  });
 
   // Which project island we're passing (for the "tap this" hint). Change-only updates.
   useEffect(() => {

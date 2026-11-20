@@ -222,8 +222,16 @@ const hazeFragment = /* glsl */ `
   uniform float uFade;
   varying vec2 vUv;
   void main() {
-    // Opaque at the ground, melting away upward: buildings rise out of the mist.
-    float a = pow(1.0 - vUv.y, 1.6) * 0.95;
+    // Opaque at the ground, melting away upward through a soft, billowing top edge (no
+    // ruler-straight line): a few layered waves plus a gentle density wobble.
+    float x = vUv.x * 260.0;
+    float edge = 0.42
+      + 0.10 * sin(x * 0.055 + 0.7)
+      + 0.06 * sin(x * 0.13 + 2.1)
+      + 0.035 * sin(x * 0.31 + 4.0);
+    float a = 1.0 - smoothstep(edge - 0.32, edge + 0.05, vUv.y);
+    a *= 0.86 + 0.14 * sin(x * 0.09 + vUv.y * 6.0);
+    a = clamp(a, 0.0, 0.95);
     gl_FragColor = vec4(uColor, a * uFade);
     #include <colorspace_fragment>
   }

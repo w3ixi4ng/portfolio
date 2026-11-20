@@ -5,5 +5,5 @@ export const EGG_COPY = {
   packer: "I'M UP! I'm up.",
   reserve: "Cutaway! Main gone, reserve open ✅ That's what it's there for.",
   kopi: "Ahh, kopi-o peng! ☕😌",
-  twists: "Line twists! Kick, kick… sorted. 😅",
+  twists: "Line twists! Kick, kick… nope. Cutting away! ✂️",
 } as const;

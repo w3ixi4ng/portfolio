@@ -234,7 +234,7 @@ Ideas (implement progressively):
 3. ~~Camera-flyer selfie~~ (removed: owner did not want it, so there are no fun facts either).
 4. **Windsock** at the dropzone: hover/click → spins and flaps wildly.
 5. **Packer on the mat** is asleep on a pile of canopy; poke them → startled "I'M UP" bubble.
-6. **Line twists** at deployment: rare (1 in 10) chance the avatar spins comically before steadying.
+6. **Line twists** at deployment: 1 in 3 jumps the avatar spins comically, the twists don't clear, so it cuts away (the main flies off into the screen) and rides the reserve.
 7. ~~Konami code → party hats~~ (removed: owner did not want it).
 8. ~~Scroll back up after landing → ladder~~ (removed: owner found it annoying).
 9. **Reserve pop**: click me under canopy → the main is cut away, flutters off, and an orange-and-white reserve snaps open: "Cutaway! Main gone, reserve open ✅" (shown as the procedure working, owner-requested; keep it cheerful, no danger).
