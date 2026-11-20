@@ -3,7 +3,17 @@
 import { Instance, Instances, useGLTF } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
-import { Color, Mesh, MeshStandardMaterial, ShaderMaterial, type Group } from "three";
+import {
+  Box3,
+  Color,
+  Group,
+  type InstancedMesh,
+  Matrix4,
+  Mesh,
+  type MeshBasicMaterial,
+  MeshStandardMaterial,
+  ShaderMaterial,
+} from "three";
 import { daylight } from "@/lib/daylight";
 import { scrollState } from "@/lib/scrollState";
 import { mulberry32 } from "./CloudField";
@@ -62,6 +72,34 @@ function FarBuilding({
 }) {
   const { scene } = useGLTF(kitUrl(name));
   const group = useRef<Group>(null);
+  const lights = useRef<InstancedMesh>(null);
+  const beacon = useRef<Mesh>(null);
+  /** Lit windows on the face toward the camera, plus a roof beacon on tall towers. */
+  const night = useMemo(() => {
+    const probe = new Group();
+    const c = scene.clone(true);
+    c.rotation.y = rotationY;
+    probe.add(c);
+    const box = new Box3().setFromObject(probe);
+    const r = mulberry32(Math.round(position[0] * 97 + position[2] * 31));
+    const w = box.max.x - box.min.x;
+    const h = box.max.y - box.min.y;
+    const wins: Matrix4[] = [];
+    const n = Math.round(4 + h * 10);
+    for (let i = 0; i < n; i++) {
+      if (r() < 0.45) continue; // not every flat is home
+      const x = box.min.x + w * (0.12 + r() * 0.76);
+      const y = box.min.y + h * (0.12 + r() * 0.8);
+      wins.push(new Matrix4().makeTranslation(x, y, box.max.z + 0.01));
+    }
+    return {
+      wins,
+      top: box.max.y,
+      cx: (box.min.x + box.max.x) / 2,
+      cz: (box.min.z + box.max.z) / 2,
+      tall: h > 1.6,
+    };
+  }, [scene, rotationY, position]);
   const obj = useMemo(() => {
     const c = scene.clone(true);
     const list: MeshStandardMaterial[] = [];
@@ -83,6 +121,16 @@ function FarBuilding({
   useFrame(() => {
     const list = group.current?.children[0]?.userData.mats as MeshStandardMaterial[] | undefined;
     if (!list) return;
+    const lit = daylight.night * fade.value;
+    if (lights.current) {
+      lights.current.visible = lit > 0.02;
+      (lights.current.material as MeshBasicMaterial).opacity = lit;
+    }
+    if (beacon.current) {
+      const blink = Math.sin(performance.now() * 0.004 + position[0]) > 0.4 ? 1 : 0.15;
+      beacon.current.visible = lit > 0.02;
+      (beacon.current.material as MeshBasicMaterial).opacity = lit * blink;
+    }
     for (const m of list) {
       m.opacity = fade.value;
       m.color.set("#ffffff").lerp(daylight.horizon, haze * 0.55);
@@ -92,8 +140,45 @@ function FarBuilding({
   });
 
   return (
-    <group ref={group} position={position} rotation={[0, rotationY, 0]} scale={scale}>
-      <primitive object={obj} />
+    <group position={position} scale={scale}>
+      <group ref={group} rotation={[0, rotationY, 0]}>
+        <primitive object={obj} />
+      </group>
+      {night.wins.length > 0 && (
+        <instancedMesh
+          ref={(m) => {
+            lights.current = m;
+            if (m) {
+              night.wins.forEach((mat, i) => m.setMatrixAt(i, mat));
+              m.instanceMatrix.needsUpdate = true;
+            }
+          }}
+          args={[undefined, undefined, night.wins.length]}
+          visible={false}
+          frustumCulled={false}
+        >
+          <planeGeometry args={[0.07, 0.05]} />
+          <meshBasicMaterial
+            color="#FFD58A"
+            transparent
+            opacity={0}
+            fog={false}
+            toneMapped={false}
+          />
+        </instancedMesh>
+      )}
+      {night.tall && (
+        <mesh ref={beacon} position={[night.cx, night.top + 0.03, night.cz]} visible={false}>
+          <sphereGeometry args={[0.035, 8, 6]} />
+          <meshBasicMaterial
+            color="#FF4A3A"
+            transparent
+            opacity={0}
+            fog={false}
+            toneMapped={false}
+          />
+        </mesh>
+      )}
     </group>
   );
 }

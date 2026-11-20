@@ -53,7 +53,13 @@ TREES.splice(
   0,
   TREES.length,
   // keep the camera side open, and clear of the farm and campsite props
-  ...TREES.filter(([, [x, , z]]) => !(x > 2 && z > 2) && !inFootprint(x, z, 2.2)),
+  ...TREES.filter(
+    ([, [x, , z]]) =>
+      !(x > 2 && z > 2) &&
+      // and nothing right beside the finale camera (~(16.6, 12.6)), whose trunk would fill the screen
+      Math.hypot(x - 16.6, z - 12.6) > 12 &&
+      !inFootprint(x, z, 2.2),
+  ),
 );
 /** Flowers and bushes tucked along the inside of the fence. */
 const FLOWERS_ALL: Placed[] = Array.from({ length: 44 }, (_, i) => {

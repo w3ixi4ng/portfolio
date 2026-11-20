@@ -111,6 +111,21 @@ body {
     background: var(--inset);
     border-radius: 14px;
   }
+  /* A tappable inset card: pointer cursor, lifts on hover, presses down. */
+  .tap-card {
+    cursor: pointer;
+    box-shadow: inset 0 0 0 1.5px transparent;
+    transition:
+      transform 0.12s ease,
+      box-shadow 0.15s ease;
+  }
+  .tap-card:hover {
+    box-shadow: inset 0 0 0 1.5px var(--canopy-red);
+    transform: translateY(-1px);
+  }
+  .tap-card:active {
+    transform: scale(0.98);
+  }
   /* Pill-shaped status bar. */
   .pill {
     color: var(--ink);
