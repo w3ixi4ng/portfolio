@@ -54,6 +54,34 @@ function buildPuffs(): Puff[] {
       });
     }
   }
+  // A cloud deck just under the plane (seen below it, fallen through on exit). The fall
+  // column stays open so the ground shows through the hole.
+  const clump = (cx: number, y: number, cz: number, size: number) => {
+    const lumps = 3 + Math.floor(rand() * 3);
+    for (let l = 0; l < lumps; l++) {
+      const middle = 1 - Math.abs(l - (lumps - 1) / 2) / lumps;
+      const s = size * (0.6 + middle * 0.6);
+      puffs.push({
+        position: [
+          cx + (l - (lumps - 1) / 2) * size * 0.75,
+          y + s * 0.25,
+          cz + (rand() - 0.5) * size * 0.8,
+        ],
+        scale: [s, s * 0.6, s],
+      });
+    }
+  };
+  for (let c = 0; c < 70; c++) {
+    const angle = rand() * Math.PI * 2;
+    const radius = 7 + Math.sqrt(rand()) * 38;
+    clump(Math.cos(angle) * radius, 113 + rand() * 4, Math.sin(angle) * radius, 1.4 + rand() * 1.4);
+  }
+  // A few big puffs drifting level with the plane, off to the sides.
+  for (let c = 0; c < 8; c++) {
+    const angle = (c / 8) * Math.PI * 2 + rand() * 0.4;
+    const radius = 9 + rand() * 6;
+    clump(Math.cos(angle) * radius, 125 + rand() * 7, Math.sin(angle) * radius, 1.3 + rand() * 0.8);
+  }
   return puffs;
 }
 
@@ -83,7 +111,14 @@ cloudMaterial.onBeforeCompile = (shader) => {
 /** Instanced cloud field from ~1,400 ft up past the plane. */
 export function CloudField() {
   return (
-    <Instances limit={PUFFS.length} range={PUFFS.length} material={cloudMaterial}>
+    <Instances
+      limit={PUFFS.length}
+      range={PUFFS.length}
+      material={cloudMaterial}
+      // Bounds come from the unit sphere at the origin, so it would be culled whenever the
+      // origin (the dropzone) is off-screen, e.g. up at the plane.
+      frustumCulled={false}
+    >
       <sphereGeometry args={[1, 16, 12]} />
       {PUFFS.map((p, i) => (
         <Instance key={i} position={p.position} scale={p.scale} />

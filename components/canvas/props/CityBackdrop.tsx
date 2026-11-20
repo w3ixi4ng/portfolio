@@ -188,7 +188,7 @@ const trees = (() => {
 /** Trees in the haze: a park treeline along the skyline's foot, washed toward the horizon colour. */
 function Treeline() {
   return (
-    <Instances limit={trees.length} range={trees.length}>
+    <Instances limit={trees.length} range={trees.length} frustumCulled={false}>
       <icosahedronGeometry args={[1, 1]} />
       <HazeMaterial color="#7C9A62" amount={0.8} />
       {trees.map((t, i) => (

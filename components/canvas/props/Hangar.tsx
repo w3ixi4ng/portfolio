@@ -55,46 +55,48 @@ export function Hangar({
         <circleGeometry args={[R, 40, 0, Math.PI]} />
         <Matte color={palette.cream} side={2} />
       </mesh>
-      <mesh position={[-0.2, 0.98, L / 2 + 0.01]}>
-        <planeGeometry args={[3, 1.8]} />
+      {/* Everything on the front stays inside the arch (height at x is sqrt(R² - x²)). */}
+      {/* dark interior behind the big door opening */}
+      <mesh position={[0, 0.93, L / 2 + 0.01]}>
+        <planeGeometry args={[2.4, 1.7]} />
         <Matte color="#3E3540" roughness={1} />
       </mesh>
-      {/* sliding door, left half-open */}
+      {/* sliding door, half-open over the right side of the opening */}
       <RoundedBox
-        args={[1.6, 1.85, 0.08]}
-        position={[1.25, 1.0, L / 2 + 0.06]}
+        args={[1.15, 1.7, 0.08]}
+        position={[0.62, 0.93, L / 2 + 0.06]}
         radius={0.03}
         castShadow
       >
         <Matte color={trim} roughness={0.6} />
       </RoundedBox>
       {Array.from({ length: 4 }, (_, i) => (
-        <mesh key={i} position={[1.25, 0.35 + i * 0.42, L / 2 + 0.11]}>
-          <boxGeometry args={[1.5, 0.03, 0.02]} />
+        <mesh key={i} position={[0.62, 0.32 + i * 0.4, L / 2 + 0.11]}>
+          <boxGeometry args={[1.05, 0.03, 0.02]} />
           <Matte color={palette.cream} />
         </mesh>
       ))}
       {/* door rail */}
-      <mesh position={[0, 1.95, L / 2 + 0.06]}>
-        <boxGeometry args={[4.2, 0.07, 0.07]} />
+      <mesh position={[0, 1.86, L / 2 + 0.06]}>
+        <boxGeometry args={[2.7, 0.07, 0.07]} />
         <Matte color={palette.ink} />
       </mesh>
       {/* little round windows high on the front */}
-      {[-0.9, 0, 0.9].map((x) => (
-        <mesh key={x} position={[x, 2.15 - Math.abs(x) * 0.25, L / 2 + 0.02]}>
-          <circleGeometry args={[0.17, 20]} />
+      {[-0.7, 0, 0.7].map((x) => (
+        <mesh key={x} position={[x, 2.08 - Math.abs(x) * 0.2, L / 2 + 0.02]}>
+          <circleGeometry args={[0.15, 20]} />
           <meshStandardMaterial color={palette.skyTop} roughness={0.2} />
         </mesh>
       ))}
       {/* door lamps: they glow at night */}
-      {[-1.9, 1.9].map((x) => (
-        <mesh key={x} position={[x, 1.75, L / 2 + 0.14]}>
+      {[-1.5, 1.5].map((x) => (
+        <mesh key={x} position={[x, 1.45, L / 2 + 0.14]}>
           <sphereGeometry args={[0.1, 14, 10]} />
           <Glow color="#FFF4DA" emissive="#FFD58A" off={0.1} on={2.8} />
         </mesh>
       ))}
-      {/* side office door with a step */}
-      <RoundedBox args={[0.6, 1.1, 0.06]} position={[-1.85, 0.6, L / 2 + 0.03]} radius={0.02}>
+      {/* side office door */}
+      <RoundedBox args={[0.42, 0.9, 0.06]} position={[-1.65, 0.53, L / 2 + 0.03]} radius={0.02}>
         <Matte color={palette.canopyRed} />
       </RoundedBox>
     </group>
