@@ -15,6 +15,8 @@ export type KitName = `${
   | "kenney"
   | "commercial"
   | "industrial"
+  | "survival"
+  | "car"
   | "characters"
   | "misc"}/${string}`;
 

@@ -124,7 +124,7 @@ export function Ground() {
     <group>
       {/* base grass, wide enough to fill the view from 13,000 ft */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <circleGeometry args={[320, 64]} />
+        <circleGeometry args={[1400, 64]} />
         <meshStandardMaterial
           color={palette.grass}
           roughness={1}

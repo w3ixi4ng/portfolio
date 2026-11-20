@@ -23,7 +23,7 @@ export const CREDITS: readonly Credit[] = [
     url: "https://kaylousberg.itch.io",
   },
   {
-    work: "Nature Kit, Food Kit, City Kit Commercial, City Kit Industrial",
+    work: "Nature Kit, Food Kit, City Kit Commercial, City Kit Industrial, Survival Kit, Car Kit",
     author: "Kenney",
     licence: "CC0",
     url: "https://kenney.nl",

@@ -7,6 +7,6 @@ in `design/asset-packs/`. Credits are also shown on the site (/plain#credits and
 |---|---|---|---|
 | Small Airplane | Vojtěch Balák | CC-BY 3.0 | https://poly.pizza/m/7cvx6ex-xfL |
 | City Builder Bits, Furniture Bits, Restaurant Bits, Resource Bits, Adventurers 2.0 | Kay Lousberg (KayKit) | CC0 | https://kaylousberg.itch.io |
-| Nature Kit, Food Kit, City Kit Commercial, City Kit Industrial | Kenney | CC0 | https://kenney.nl |
+| Nature Kit, Food Kit, City Kit Commercial, City Kit Industrial, Survival Kit, Car Kit | Kenney | CC0 | https://kenney.nl |
 
 CC0 works need no attribution; they're listed as thanks. Keep `lib/credits.ts` in sync.

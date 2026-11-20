@@ -10,6 +10,7 @@ import { Glow } from "../Glow";
 import { Matte } from "../Matte";
 import { Canopy } from "./Canopy";
 import { mulberry32 } from "./CloudField";
+import { haze } from "./distanceHaze";
 import { HazeMaterial } from "./HazeMaterial";
 import { Kit, preloadKit, type KitName } from "./Kit";
 
@@ -17,7 +18,7 @@ import { Kit, preloadKit, type KitName } from "./Kit";
  * Life around the airfield, outside the tree ring (the camera looks from +x,+z toward -x,-z,
  * so screen-right is +x,-z and screen-left is -x,+z):
  *  - a little farm on the right: crop rows, a red barn, a silo, hay bales, windmills behind
- *  - a jumpers' campsite on the left: tents in canopy colours, a campfire, a camper car
+ *  - a jumpers' campsite on the left: tents in canopy colours, a campfire, bedrolls, a camper van (Kenney Survival/Car kits)
  *  - low hazy hills round the horizon (gap left for the skyline)
  *  - sky life over the landing: two canopy pilots spiralling down, the jump plane circling
  *    back up, and a few birds
@@ -128,23 +129,41 @@ function Camp() {
           <Tent color={c} />
         </group>
       ))}
-      {/* campfire: logs, stones and a flame that glows at night */}
+      {/* campfire (Kenney Survival Kit) with a flame that glows at night, bedrolls round it */}
       <group position={[P(263, 22)[0], 0, P(263, 22)[1]]}>
-        <Kit name="nature/log_stack" scale={1.2} />
-        {Array.from({ length: 7 }, (_, i) => {
-          const a = (i / 7) * Math.PI * 2;
-          return (
-            <mesh key={i} position={[Math.cos(a) * 0.55, 0.08, Math.sin(a) * 0.55]}>
-              <dodecahedronGeometry args={[0.13]} />
-              <Matte color="#9A9590" />
-            </mesh>
-          );
-        })}
-        <mesh position={[0, 0.42, 0]}>
-          <coneGeometry args={[0.22, 0.55, 8]} />
+        <Kit name="survival/campfire-pit" scale={1.6} />
+        <mesh position={[0, 0.45, 0]}>
+          <coneGeometry args={[0.2, 0.5, 8]} />
           <Glow color="#FFB347" emissive="#FF7A1F" off={0.6} on={3.2} />
         </mesh>
+        <Kit name="survival/bedroll" position={[1.3, 0, 0.4]} rotation={[0, 1.2, 0]} scale={1.6} />
+        <Kit
+          name="survival/bedroll"
+          position={[-1.2, 0, 0.6]}
+          rotation={[0, -1.0, 0]}
+          scale={1.6}
+        />
       </group>
+      {/* camp signpost, barrels and a supply box */}
+      <Kit
+        name="survival/signpost"
+        position={[P(246, 19.5)[0], 0, P(246, 19.5)[1]]}
+        rotation={[0, 0.6, 0]}
+        scale={1.8}
+      />
+      <Kit name="survival/barrel" position={[P(281, 22.5)[0], 0, P(281, 22.5)[1]]} scale={1.6} />
+      <Kit
+        name="survival/barrel"
+        position={[P(283, 23.3)[0], 0, P(283, 23.3)[1]]}
+        rotation={[0, 0.7, 0]}
+        scale={1.6}
+      />
+      <Kit
+        name="survival/box"
+        position={[P(279, 23.6)[0], 0, P(279, 23.6)[1]]}
+        rotation={[0, 0.3, 0]}
+        scale={1.6}
+      />
       {/* picnic blanket with two mugs */}
       <group position={[P(250, 20.5)[0], 0.08, P(250, 20.5)[1]]} rotation={[0, 0.5, 0]}>
         <mesh receiveShadow>
@@ -161,9 +180,9 @@ function Camp() {
         <Kit name="kenney/mug" position={[-0.2, 0.02, -0.3]} scale={1.2} />
       </group>
       {/* a camper car with a canopy bag on the roof */}
-      <group position={[P(278, 26.5)[0], 0.2, P(278, 26.5)[1]]} rotation={[0, 0.2, 0]}>
-        <Kit name="city/car_hatchback" scale={2.6} />
-        <RoundedBox args={[0.9, 0.3, 0.6]} position={[0, 1.15, 0]} radius={0.1}>
+      <group position={[P(278, 26.5)[0], 0, P(278, 26.5)[1]]} rotation={[0, 0.2, 0]}>
+        <Kit name="car/van" scale={1.2} />
+        <RoundedBox args={[0.9, 0.3, 0.6]} position={[0, 1.2, 0]} radius={0.1}>
           <Matte color={palette.canopyYellow} />
         </RoundedBox>
       </group>
@@ -188,18 +207,32 @@ const HILLS = Array.from({ length: 30 }, (_, i) => {
 }).filter((h) => h.keep);
 
 function Hills() {
+  const g = useRef<Group>(null);
+  // Only part of the landing view: they rise as the landing haze builds (from above they
+  // would just be pale blobs on the patchwork).
+  useFrame(() => {
+    const o = g.current;
+    if (!o) return;
+    o.scale.y = Math.max(0.001, haze.amount.value);
+    o.visible = haze.amount.value > 0.001;
+  });
   return (
-    <Instances limit={HILLS.length} range={HILLS.length} frustumCulled={false}>
-      <sphereGeometry args={[1, 16, 10]} />
-      <HazeMaterial color="#86A35A" amount={0.62} />
-      {HILLS.map((h, i) => (
-        <Instance key={i} position={h.position} scale={h.scale} />
-      ))}
-    </Instances>
+    <group ref={g}>
+      <Instances limit={HILLS.length} range={HILLS.length} frustumCulled={false}>
+        <sphereGeometry args={[1, 16, 10]} />
+        <HazeMaterial color="#86A35A" amount={0.62} />
+        {HILLS.map((h, i) => (
+          <Instance key={i} position={h.position} scale={h.scale} />
+        ))}
+      </Instances>
+    </group>
   );
 }
 
 /* ------------------------------------------------------------------ sky life */
+
+/** 0 -> 1 as the sky life fades in (scales every flyer). */
+const skyLifeIn = { value: 0 };
 
 const PILOTS = [
   { cx: -7, cz: -6, r: 4.5, top: 15, bottom: 3, speed: 0.55, w: 0.45, phase: 0, colors: undefined },
@@ -238,7 +271,7 @@ function CanopyPilot({ spec }: { spec: (typeof PILOTS)[number] }) {
     // Face along the turn; pop in at the top and shrink away just before "landing".
     o.rotation.set(0, -a + (spec.w > 0 ? 0 : Math.PI), Math.sign(spec.w) * 0.25);
     const s = Math.min(1, fall / 0.8, (span - fall) / 1.2) * 0.45;
-    o.scale.setScalar(Math.max(0.001, s));
+    o.scale.setScalar(Math.max(0.001, s * skyLifeIn.value));
   });
   return (
     <group ref={g}>
@@ -263,6 +296,7 @@ function CirclingPlane() {
     const a = state.clock.elapsedTime * 0.12;
     o.position.set(-12 + Math.cos(a) * 26, 24 + Math.sin(a * 2) * 1.5, -12 + Math.sin(a) * 26);
     o.rotation.set(0, -a + Math.PI, 0.3);
+    o.scale.setScalar(Math.max(0.001, skyLifeIn.value));
   });
   return (
     <group ref={g}>
@@ -279,6 +313,7 @@ function Birds() {
     if (g.current) {
       const k = ((t * 0.04) % 1) * 2 - 1; // -1 → 1, then wrap
       g.current.position.set(-30 + k * 40, 13 + Math.sin(t * 0.5), -6 - k * 40);
+      g.current.scale.setScalar(Math.max(0.001, skyLifeIn.value));
     }
     wings.current.forEach((w, i) => {
       if (w) w.rotation.z = Math.sin(t * 9 + i) * 0.6;
@@ -318,7 +353,9 @@ function Birds() {
 function SkyLife() {
   const g = useRef<Group>(null);
   useFrame(() => {
-    if (g.current) g.current.visible = scrollState.current > 0.8;
+    const k = Math.min(1, Math.max(0, (scrollState.current - 0.78) / 0.06));
+    skyLifeIn.value = k * k * (3 - 2 * k);
+    if (g.current) g.current.visible = skyLifeIn.value > 0.001;
   });
   return (
     <group ref={g} visible={false}>
@@ -335,9 +372,15 @@ preloadKit([
   "kenney/crops_wheatStageB",
   "kenney/crops_cornStageC",
   "industrial/windmill",
-  "nature/log_stack",
+  "survival/campfire-pit",
+  "survival/bedroll",
+  "survival/signpost",
+  "survival/barrel",
+  "survival/box",
+  "car/van",
+  "car/tractor",
+  "car/truck-flat",
   "kenney/mug",
-  "city/car_hatchback",
   "misc/small-airplane-balak",
 ]);
 
@@ -353,6 +396,18 @@ export function DropzoneSurroundings() {
         <Kit key={i} name={name} position={[x, 0.1, z]} scale={1.5} />
       ))}
       <Barn />
+      <Kit
+        name="car/tractor"
+        position={[P(201, 19.2)[0], 0, P(201, 19.2)[1]]}
+        rotation={[0, 2.2, 0]}
+        scale={1.1}
+      />
+      <Kit
+        name="car/truck-flat"
+        position={[P(222, 27)[0], 0, P(222, 27)[1]]}
+        rotation={[0, 0.4, 0]}
+        scale={1.2}
+      />
       {BALES.map(([x, z, r]) => (
         <mesh key={`${x},${z}`} position={[x, 0.4, z]} rotation={[Math.PI / 2, 0, r]} castShadow>
           <cylinderGeometry args={[0.42, 0.42, 0.75, 16]} />

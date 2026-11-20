@@ -2,12 +2,13 @@
 
 import { useFrame } from "@react-three/fiber";
 import { useRef, useState } from "react";
-import { Color, type Fog, type ShaderMaterial } from "three";
+import { Color, Matrix4, type Fog, type ShaderMaterial } from "three";
 import { daylight } from "@/lib/daylight";
 import { altitudeFromScroll, lerp } from "@/lib/scroll";
 import { scrollState } from "@/lib/scrollState";
 import { skyStops } from "@/lib/theme";
 import { CloudField } from "./props/CloudField";
+import { haze } from "./props/distanceHaze";
 
 /** Full-screen quad drawn behind everything (works with the orthographic camera). */
 const vertexShader = /* glsl */ `
@@ -23,12 +24,17 @@ const fragmentShader = /* glsl */ `
   uniform vec3 uBottom;
   uniform float uNight;
   uniform float uGlow;
+  uniform mat4 uInvViewProj;
   varying vec2 vUv;
   float hash(vec2 p) {
     return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
   }
   void main() {
-    float h = smoothstep(0.0, 1.0, vUv.y);
+    // Grade by the real view direction, not screen height: everything at or below the
+    // horizon is the haze colour, so the ground's far edge melts into the sky.
+    vec4 far = uInvViewProj * vec4(vUv * 2.0 - 1.0, 1.0, 1.0);
+    vec3 dir = normalize(far.xyz / far.w - cameraPosition);
+    float h = smoothstep(-0.02, 0.62, dir.y);
     vec3 col = mix(uBottom, uTop, h);
     // Soft sun glow in the upper-left, like late-afternoon light.
     float sun = smoothstep(0.75, 0.0, distance(vUv, vec2(0.18, 0.92)));
@@ -73,12 +79,19 @@ export function Sky() {
     uBottom: { value: new Color() },
     uNight: { value: 0 },
     uGlow: { value: 0.18 },
+    uInvViewProj: { value: new Matrix4() },
   }));
 
-  useFrame(() => {
+  useFrame(({ camera }) => {
     const m = material.current;
     if (!m) return;
+    (m.uniforms.uInvViewProj.value as Matrix4)
+      .copy(camera.matrixWorld)
+      .multiply(camera.projectionMatrixInverse);
     const altitude = altitudeFromScroll(scrollState.current);
+    // Landing haze fades in below ~3,500 ft (see distanceHaze).
+    const k = Math.min(1, Math.max(0, (3500 - altitude) / 2300));
+    haze.amount.value = k * k * (3 - 2 * k);
     const top = m.uniforms.uTop.value as Color;
     const bottom = m.uniforms.uBottom.value as Color;
     sampleSky(altitude, top, bottom);

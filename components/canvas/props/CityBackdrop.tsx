@@ -21,6 +21,9 @@ import { kitUrl, preloadKit, type KitName } from "./Kit";
  * the skyline, +z faces the camera.
  */
 
+/** 0 -> 1 as the skyline fades in (shared by every far building). */
+const backdropFade = { value: 0 };
+
 const SKYSCRAPERS = "abcde".split("").map((c): KitName => `commercial/building-skyscraper-${c}`);
 const MIDRISE = "abcdefghijkl".split("").map((c): KitName => `commercial/building-${c}`);
 const SILHOUETTES: KitName[] = [
@@ -63,6 +66,7 @@ function FarBuilding({
       if (!(o instanceof Mesh) || !(o.material instanceof MeshStandardMaterial)) return;
       const m = o.material.clone();
       m.fog = false; // too far for scene fog: hazed by hand below
+      m.transparent = true; // fades in on the landing approach (backdropFade)
       m.emissive = new Color("#ffffff");
       m.emissiveMap = m.map;
       o.material = m;
@@ -76,7 +80,9 @@ function FarBuilding({
   useFrame(() => {
     const list = group.current?.children[0]?.userData.mats as MeshStandardMaterial[] | undefined;
     if (!list) return;
+    const fade = backdropFade.value;
     for (const m of list) {
+      m.opacity = fade;
       m.color.set("#ffffff").lerp(daylight.horizon, haze * 0.55);
       m.emissive.copy(daylight.horizon);
       m.emissiveIntensity = (0.3 + 0.55 * haze) * (1 - daylight.night * 0.65);
@@ -190,9 +196,13 @@ function Treeline() {
   return (
     <Instances limit={trees.length} range={trees.length} frustumCulled={false}>
       <icosahedronGeometry args={[1, 1]} />
-      <HazeMaterial color="#7C9A62" amount={0.8} />
+      <HazeMaterial color="#7C9A62" amount={0.88} />
       {trees.map((t, i) => (
-        <Instance key={i} position={[t.x, t.s * 0.8, t.z]} scale={[t.s * 1.1, t.s, t.s * 1.1]} />
+        <Instance
+          key={i}
+          position={[t.x, t.s * 0.45, t.z]}
+          scale={[t.s * 1.15, t.s * 0.75, t.s * 1.15]}
+        />
       ))}
     </Instances>
   );
@@ -244,7 +254,10 @@ export function CityBackdrop() {
   const root = useRef<Group>(null);
   // Only for the landing approach: seen from above during the jump it is just flat rows.
   useFrame(() => {
-    if (root.current) root.current.visible = scrollState.current > 0.88;
+    // Fade in over the landing approach (from above during the jump it is just flat rows).
+    const k = Math.min(1, Math.max(0, (scrollState.current - 0.84) / 0.07));
+    backdropFade.value = k * k * (3 - 2 * k);
+    if (root.current) root.current.visible = backdropFade.value > 0.001;
   });
   return (
     <group ref={root} visible={false} position={[-54, 0, -54]} rotation={[0, Math.PI / 4, 0]}>
