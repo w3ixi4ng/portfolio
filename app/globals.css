@@ -33,6 +33,7 @@
   --btn: #ebe4d5;
   --btn-hover: #e3dbc9;
   --card-shadow: 60 50 40;
+  --card-highlight: rgb(255 255 255 / 0.9);
 }
 
 :root[data-theme="night"] .btn-cream {
@@ -51,6 +52,8 @@
   --btn: #3a3854;
   --btn-hover: #46436a;
   --card-shadow: 0 0 0;
+  /* a white rim reads as a glitchy line on dark cards */
+  --card-highlight: rgb(255 255 255 / 0.04);
 }
 
 @theme inline {
@@ -102,7 +105,7 @@ body {
     background: var(--paper);
     border-radius: 20px;
     box-shadow:
-      0 1px 0 rgb(255 255 255 / 0.9) inset,
+      0 1px 0 var(--card-highlight) inset,
       0 2px 4px rgb(60 50 40 / 0.08),
       0 10px 28px rgb(var(--card-shadow) / 0.16);
   }

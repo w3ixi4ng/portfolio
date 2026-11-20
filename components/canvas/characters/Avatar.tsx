@@ -81,6 +81,9 @@ export function Avatar() {
   const twistPending = useRef(false);
   const twistAt = useRef(-10);
   const phaseNow = useRef<Phase | null>(null);
+  /** Twists in progress, waiting for the cutaway. */
+  const twistLive = useRef(false);
+  const cutRef = useRef<() => void>(() => {});
   const pokeRef = useRef<() => void>(() => {});
   const egg = useEgg();
   const island = islandIndex >= 0 ? ISLANDS[islandIndex] : null;
@@ -90,6 +93,8 @@ export function Avatar() {
     let last: Phase | null = null;
     return onScrollFrame((t) => {
       const next = phaseFor(t);
+      // Fast scroller: cut away while still up high, before the time-based cutaway.
+      if (twistLive.current && t > getZone("deployment").start + 0.025) cutRef.current();
       if (next === last) return;
       if (next === "canopy" && last === "freefall") {
         sfx.canopy();
@@ -99,6 +104,7 @@ export function Avatar() {
           process.env.NODE_ENV !== "production" && window.location.search.includes("twists");
         if (force || Math.random() < 1 / 3) {
           twistPending.current = true;
+          twistLive.current = true;
           setTwisting(true);
           egg("line-twists");
         }
@@ -114,11 +120,8 @@ export function Avatar() {
 
   useEffect(() => {
     if (!twisting) return;
-    const t = window.setTimeout(() => {
-      setTwisting(false);
-      // The twists didn't clear: cut away and ride the reserve (still under canopy only).
-      if (phaseNow.current === "canopy" && !useAppStore.getState().reserve) pokeRef.current();
-    }, 2600);
+    // The twists don't clear: cut away and ride the reserve, quickly so it happens high up.
+    const t = window.setTimeout(() => cutRef.current(), 1300);
     return () => window.clearTimeout(t);
   }, [twisting]);
 
@@ -132,6 +135,14 @@ export function Avatar() {
     });
   }, []);
 
+  /** End line twists with a cutaway (only while still under canopy). */
+  function cutAway() {
+    if (!twistLive.current) return;
+    twistLive.current = false;
+    setTwisting(false);
+    if (phaseNow.current === "canopy" && !useAppStore.getState().reserve) pokeRef.current();
+  }
+
   const poke = () => {
     if (useAppStore.getState().reserve) return;
     sfx.canopy();
@@ -141,6 +152,7 @@ export function Avatar() {
   };
   useEffect(() => {
     pokeRef.current = poke;
+    cutRef.current = cutAway;
   });
 
   // Which project island we're passing (for the "tap this" hint). Change-only updates.
@@ -254,8 +266,8 @@ export function Avatar() {
       twistPending.current = false;
       twistAt.current = state.clock.elapsedTime;
     }
-    const tk = Math.min(1, (state.clock.elapsedTime - twistAt.current) / 2.2);
-    const twist = phase === "canopy" && tk < 1 ? Math.PI * 6 * (1 - (1 - tk) ** 3) : 0;
+    const tk = Math.min(1, (state.clock.elapsedTime - twistAt.current) / 1.2);
+    const twist = phase === "canopy" && tk < 1 ? Math.PI * 4 * (1 - (1 - tk) ** 3) : 0;
     if (barrel.current) barrel.current.rotation.y = twist;
   }, -4);
 

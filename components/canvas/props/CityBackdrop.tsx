@@ -4,13 +4,13 @@ import { Instance, Instances, useGLTF } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import {
-  Box3,
   Color,
   Group,
   Mesh,
   type MeshBasicMaterial,
   MeshStandardMaterial,
   ShaderMaterial,
+  Vector3,
   type WebGLProgramParametersWithUniforms,
 } from "three";
 import { daylight } from "@/lib/daylight";
@@ -90,8 +90,10 @@ function winLights(shader: WebGLProgramParametersWithUniforms) {
         // Warm lamps, a few cooler (TV / white light), varied brightness.
         float h2 = fract(h * 7.31);
         vec3 lamp = mix(vec3(1.0, 0.72, 0.38), vec3(0.85, 0.9, 1.0), step(0.8, h2));
-        totalEmissiveRadiance += lamp * glass * home * (0.45 + 0.4 * h2);
-        diffuseColor.rgb *= 1.0 - glass * (1.0 - home) * uWindowGlow * 0.55;
+        // Off entirely by day/dusk; fades up only once it's properly dark.
+        float dark = smoothstep(0.35, 0.85, uWindowGlow);
+        totalEmissiveRadiance += lamp * glass * home * dark * (0.45 + 0.4 * h2);
+        diffuseColor.rgb *= 1.0 - glass * (1.0 - home) * dark * 0.55;
       #endif`,
     );
 }
@@ -118,19 +120,24 @@ function FarBuilding({
   const beacon = useRef<Mesh>(null);
   /** A blinking roof beacon on tall towers (window lights live in the material: winLights). */
   const night = useMemo(() => {
-    const probe = new Group();
+    // Highest vertex of the model (rotated as placed): the beacon sits right on it.
     const c = scene.clone(true);
     c.rotation.y = rotationY;
-    probe.add(c);
-    const box = new Box3().setFromObject(probe);
-    const h = box.max.y - box.min.y;
-    return {
-      top: box.max.y,
-      cx: (box.min.x + box.max.x) / 2,
-      cz: (box.min.z + box.max.z) / 2,
-      tall: h > 1.6,
-    };
-  }, [scene, rotationY]);
+    c.updateMatrixWorld(true);
+    const v = new Vector3();
+    const top = new Vector3(0, -Infinity, 0);
+    let minY = Infinity;
+    c.traverse((o) => {
+      if (!(o instanceof Mesh)) return;
+      const pos = o.geometry.attributes.position;
+      for (let k = 0; k < pos.count; k++) {
+        v.fromBufferAttribute(pos, k).applyMatrix4(o.matrixWorld);
+        if (v.y > top.y) top.copy(v);
+        minY = Math.min(minY, v.y);
+      }
+    });
+    return { top, tall: lights && top.y - minY > 2.2 };
+  }, [scene, rotationY, lights]);
   const obj = useMemo(() => {
     const c = scene.clone(true);
     const list: MeshStandardMaterial[] = [];
@@ -160,8 +167,9 @@ function FarBuilding({
     windowGlow.value = daylight.night;
     if (beacon.current) {
       const blink = Math.sin(performance.now() * 0.004 + position[0]) > 0.4 ? 1 : 0.15;
+      const dark = Math.min(1, Math.max(0, (daylight.night - 0.35) / 0.5));
       beacon.current.visible = lit > 0.02;
-      (beacon.current.material as MeshBasicMaterial).opacity = lit * blink;
+      (beacon.current.material as MeshBasicMaterial).opacity = dark * fade.value * blink;
     }
     for (const m of list) {
       m.opacity = fade.value;
@@ -177,7 +185,11 @@ function FarBuilding({
         <primitive object={obj} />
       </group>
       {night.tall && (
-        <mesh ref={beacon} position={[night.cx, night.top + 0.03, night.cz]} visible={false}>
+        <mesh
+          ref={beacon}
+          position={[night.top.x, night.top.y + 0.03, night.top.z]}
+          visible={false}
+        >
           <sphereGeometry args={[0.035, 8, 6]} />
           <meshBasicMaterial
             color="#FF4A3A"
