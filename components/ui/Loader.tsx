@@ -159,12 +159,15 @@ export function Loader() {
                   className="absolute top-1/2 h-6 w-10 -translate-x-1/2 -translate-y-1/2 transition-[left] duration-300"
                   style={{ left: `${pct}%` }}
                 >
-                  <path
-                    d="M4 12 q2 -5 10 -5 h14 l7 -5 h3 l-3 8 q3 2 0 4 h-21 q-10 0 -10 -2z"
-                    fill="var(--canopy-red)"
-                  />
-                  <rect x="15" y="9" width="12" height="3" rx="1.5" fill="var(--paper)" />
-                  <rect x="12" y="13" width="14" height="3" rx="1.5" fill="var(--cream)" />
+                  {/* drawn nose-left: mirrored so it flies left to right */}
+                  <g transform="translate(40 0) scale(-1 1)">
+                    <path
+                      d="M4 12 q2 -5 10 -5 h14 l7 -5 h3 l-3 8 q3 2 0 4 h-21 q-10 0 -10 -2z"
+                      fill="var(--canopy-red)"
+                    />
+                    <rect x="15" y="9" width="12" height="3" rx="1.5" fill="var(--paper)" />
+                    <rect x="12" y="13" width="14" height="3" rx="1.5" fill="var(--cream)" />
+                  </g>
                 </svg>
               </div>
               <div className="mt-1 flex justify-between text-xs font-bold text-ink-soft">

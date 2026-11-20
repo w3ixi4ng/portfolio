@@ -3,7 +3,7 @@
 import { settings } from "@/content";
 import { palette } from "@/lib/theme";
 import { Matte } from "../Matte";
-import { CAMP_BEARING, DropzoneSurroundings, FARM_BEARING } from "../props/DropzoneSurroundings";
+import { DropzoneSurroundings, inFootprint } from "../props/DropzoneSurroundings";
 import { HangarHub } from "../props/HangarHub";
 import { KopiStall } from "../props/KopiStall";
 import { Lamppost } from "../props/Lamppost";
@@ -38,12 +38,6 @@ const FLOWER_KINDS: KitName[] = [
   "nature/grass_large",
 ];
 
-/** Is (x, z) within a bearing range (degrees, 0 = +x, 90 = +z) seen from the plaza? */
-const inSector = (x: number, z: number, [from, to]: readonly [number, number]) => {
-  const deg = ((Math.atan2(z, x) * 180) / Math.PI + 360) % 360;
-  return deg >= from && deg <= to;
-};
-
 /** Trees in a loose ring just outside the fence. */
 const TREES: Placed[] = Array.from({ length: 34 }, (_, i) => {
   const a = (i / 34) * Math.PI * 2 + rand() * 0.15;
@@ -58,11 +52,8 @@ const TREES: Placed[] = Array.from({ length: 34 }, (_, i) => {
 TREES.splice(
   0,
   TREES.length,
-  // keep the camera side open, and clear the view to the farm and the campsite
-  ...TREES.filter(
-    ([, [x, , z]]) =>
-      !(x > 2 && z > 2) && !inSector(x, z, FARM_BEARING) && !inSector(x, z, CAMP_BEARING),
-  ),
+  // keep the camera side open, and clear of the farm and campsite props
+  ...TREES.filter(([, [x, , z]]) => !(x > 2 && z > 2) && !inFootprint(x, z, 2.2)),
 );
 /** Flowers and bushes tucked along the inside of the fence. */
 const FLOWERS_ALL: Placed[] = Array.from({ length: 44 }, (_, i) => {
@@ -211,7 +202,6 @@ export function DropzoneZone() {
       </group>
 
       {/* lampposts: they light up at night */}
-      <Lamppost position={[-2.4, 0, -3.0]} />
       <Lamppost position={[5.6, 0, -3.4]} />
       <Lamppost position={[3.2, 0, 5.4]} />
       <Lamppost position={[-4.4, 0, 3.2]} />

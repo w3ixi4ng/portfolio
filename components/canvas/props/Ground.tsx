@@ -4,6 +4,7 @@ import { Instance, Instances } from "@react-three/drei";
 import { palette } from "@/lib/theme";
 import { mulberry32 } from "./CloudField";
 import { distanceHaze, distanceHazeKey } from "./distanceHaze";
+import { inFootprint } from "./DropzoneSurroundings";
 import { settings } from "@/content";
 import { HdbEstate, HDB_CELLS } from "./HdbEstate";
 import { Kit, preloadKit, type KitName } from "./Kit";
@@ -117,7 +118,17 @@ function build() {
   return { fields, trees, houses };
 }
 
-const { fields: FIELDS, trees: TREES, houses: HOUSES } = build();
+const BUILT = build();
+const { fields: FIELDS } = BUILT;
+const HOUSES = BUILT.houses.filter(({ position: [x, , z] }) => !inFootprint(x, z, 2.5));
+/** Hedgerows, minus any standing where the farm and campsite put things. */
+const TREES = BUILT.trees.filter(({ position: [x, , z] }) => {
+  if (inFootprint(x, z, 1.4)) return false;
+  // Nothing tall in the strip behind the hangars that the finale looks across: from that low
+  // angle a lone hedgerow there pokes up through the haze as a dark speck.
+  const deg = ((Math.atan2(z, x) * 180) / Math.PI + 360) % 360;
+  return !(Math.hypot(x, z) > 26 && deg > 160 && deg < 290);
+});
 
 export function Ground() {
   return (
@@ -133,7 +144,8 @@ export function Ground() {
         />
       </mesh>
 
-      <Instances limit={FIELDS.length} range={FIELDS.length} receiveShadow>
+      {/* frustumCulled off: instanced bounds go stale, which culled the fields at some angles */}
+      <Instances limit={FIELDS.length} range={FIELDS.length} receiveShadow frustumCulled={false}>
         <boxGeometry />
         <meshStandardMaterial
           roughness={1}
@@ -169,7 +181,7 @@ export function Ground() {
         </mesh>
       ))}
 
-      <Instances limit={TREES.length} range={TREES.length} castShadow>
+      <Instances limit={TREES.length} range={TREES.length} castShadow frustumCulled={false}>
         <sphereGeometry args={[1, 14, 10]} />
         <meshStandardMaterial
           roughness={0.9}

@@ -15,14 +15,11 @@ import { kitUrl, preloadKit, type KitName } from "./Kit";
  *  - Kenney City Kit Commercial: five glass skyscrapers, mid-rise blocks, and the white
  *    "low-detail" silhouettes (made for backdrops) as the hazy back row
  *  - Kenney City Kit Industrial: a district on the right (water tower, chimneys, tanks,
- *    containers, windmills)
+ *    containers)
  *  - KayKit City Builder: the same buildings used elsewhere, on the left flank
  * Everything is washed toward the horizon colour (more the further back), and a mist wall melts the bases into the ground. Local +x runs along
  * the skyline, +z faces the camera.
  */
-
-/** 0 -> 1 as the skyline fades in (shared by every far building). */
-const backdropFade = { value: 0 };
 
 const SKYSCRAPERS = "abcde".split("").map((c): KitName => `commercial/building-skyscraper-${c}`);
 const MIDRISE = "abcdefghijkl".split("").map((c): KitName => `commercial/building-${c}`);
@@ -43,6 +40,12 @@ const KAYKIT: KitName[] = [
 type Scale = number | [number, number, number];
 
 /** One far building: its own material copies, hazed toward the horizon colour. */
+/**
+ * 0 -> 1 as the skyline fades in on the landing approach (it belongs to the dropzone view;
+ * from up high it would just be rows of rooftops). Shared by every piece of the backdrop.
+ */
+const fade = { value: 0 };
+
 function FarBuilding({
   name,
   position,
@@ -66,7 +69,7 @@ function FarBuilding({
       if (!(o instanceof Mesh) || !(o.material instanceof MeshStandardMaterial)) return;
       const m = o.material.clone();
       m.fog = false; // too far for scene fog: hazed by hand below
-      m.transparent = true; // fades in on the landing approach (backdropFade)
+      m.transparent = true; // fades in with the landing approach
       m.emissive = new Color("#ffffff");
       m.emissiveMap = m.map;
       o.material = m;
@@ -80,9 +83,8 @@ function FarBuilding({
   useFrame(() => {
     const list = group.current?.children[0]?.userData.mats as MeshStandardMaterial[] | undefined;
     if (!list) return;
-    const fade = backdropFade.value;
     for (const m of list) {
-      m.opacity = fade;
+      m.opacity = fade.value;
       m.color.set("#ffffff").lerp(daylight.horizon, haze * 0.55);
       m.emissive.copy(daylight.horizon);
       m.emissiveIntensity = (0.3 + 0.55 * haze) * (1 - daylight.night * 0.65);
@@ -175,8 +177,6 @@ const INDUSTRIAL: [KitName, number, number, number, number][] = [
   ["industrial/shipping-container-a", 65, 5, 4.4, 0.2],
   ["industrial/shipping-container-b", 67.5, 5.4, 4.4, -0.1],
   ["industrial/shipping-container-c", 70, 5, 4.4, 0.3],
-  ["industrial/windmill", 76, -6, 5.6, 0],
-  ["industrial/windmill", 82, -2, 5.6, 0.4],
   ["industrial/solar-panel-landscape-group", 77, 4, 4.4, 0],
 ];
 
@@ -186,7 +186,8 @@ const trees = (() => {
   const r = mulberry32(5);
   return Array.from({ length: 46 }, (_, i) => ({
     x: -78 + i * 3.4 + (r() - 0.5) * 2,
-    z: 7 + r() * 4,
+    // well behind the mist wall (z = 13) even at full radius, so no crown pokes through it
+    z: 4.5 + r() * 2.5,
     s: 1.5 + r() * 1.3,
   }));
 })();
@@ -218,11 +219,12 @@ const hazeVertex = /* glsl */ `
 
 const hazeFragment = /* glsl */ `
   uniform vec3 uColor;
+  uniform float uFade;
   varying vec2 vUv;
   void main() {
     // Opaque at the ground, melting away upward: buildings rise out of the mist.
     float a = pow(1.0 - vUv.y, 1.6) * 0.95;
-    gl_FragColor = vec4(uColor, a);
+    gl_FragColor = vec4(uColor, a * uFade);
     #include <colorspace_fragment>
   }
 `;
@@ -231,7 +233,9 @@ const hazeFragment = /* glsl */ `
 function HazeWall() {
   const mat = useRef<ShaderMaterial>(null);
   useFrame(() => {
-    mat.current?.uniforms.uColor.value.copy(daylight.horizon);
+    if (!mat.current) return;
+    mat.current.uniforms.uColor.value.copy(daylight.horizon);
+    mat.current.uniforms.uFade.value = fade.value;
   });
   return (
     <mesh position={[0, 10, 13]} renderOrder={2}>
@@ -241,7 +245,7 @@ function HazeWall() {
         transparent
         depthWrite={false}
         fog={false}
-        uniforms={{ uColor: { value: new Color("#F4CFA4") } }}
+        uniforms={{ uColor: { value: new Color("#F4CFA4") }, uFade: { value: 0 } }}
         vertexShader={hazeVertex}
         fragmentShader={hazeFragment}
       />
@@ -252,12 +256,13 @@ function HazeWall() {
 /** The whole backdrop, placed behind the dropzone along the camera's far diagonal. */
 export function CityBackdrop() {
   const root = useRef<Group>(null);
-  // Only for the landing approach: seen from above during the jump it is just flat rows.
+  const trees = useRef<Group>(null);
   useFrame(() => {
-    // Fade in over the landing approach (from above during the jump it is just flat rows).
     const k = Math.min(1, Math.max(0, (scrollState.current - 0.84) / 0.07));
-    backdropFade.value = k * k * (3 - 2 * k);
-    if (root.current) root.current.visible = backdropFade.value > 0.001;
+    fade.value = k * k * (3 - 2 * k);
+    if (root.current) root.current.visible = fade.value > 0.001;
+    // the treeline grows up out of the ground rather than fading
+    if (trees.current) trees.current.scale.y = Math.max(0.001, fade.value);
   });
   return (
     <group ref={root} visible={false} position={[-54, 0, -54]} rotation={[0, Math.PI / 4, 0]}>
@@ -281,7 +286,9 @@ export function CityBackdrop() {
           haze={0.35}
         />
       ))}
-      <Treeline />
+      <group ref={trees}>
+        <Treeline />
+      </group>
       <HazeWall />
     </group>
   );

@@ -89,8 +89,8 @@ export function Sky() {
       .copy(camera.matrixWorld)
       .multiply(camera.projectionMatrixInverse);
     const altitude = altitudeFromScroll(scrollState.current);
-    // Landing haze fades in below ~3,500 ft (see distanceHaze).
-    const k = Math.min(1, Math.max(0, (3500 - altitude) / 2300));
+    // Landing haze fades in below ~1,800 ft (see distanceHaze).
+    const k = Math.min(1, Math.max(0, (1800 - altitude) / 1400));
     haze.amount.value = k * k * (3 - 2 * k);
     const top = m.uniforms.uTop.value as Color;
     const bottom = m.uniforms.uBottom.value as Color;

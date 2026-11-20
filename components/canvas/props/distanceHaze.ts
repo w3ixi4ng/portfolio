@@ -15,7 +15,10 @@ export const haze = { amount: { value: 0 } };
 export function distanceHaze(shader: WebGLProgramParametersWithUniforms) {
   shader.uniforms.uHazeAmount = haze.amount;
   shader.vertexShader = shader.vertexShader
-    .replace("#include <common>", "#include <common>\nvarying vec3 vHazePos;")
+    .replace(
+      "#include <common>",
+      "#include <common>\nvarying vec3 vHazePos;\nuniform float uHazeAmount;",
+    )
     .replace(
       "#include <begin_vertex>",
       `#include <begin_vertex>
@@ -23,7 +26,14 @@ export function distanceHaze(shader: WebGLProgramParametersWithUniforms) {
       #ifdef USE_INSTANCING
         hz = instanceMatrix * hz;
       #endif
-      vHazePos = (modelMatrix * hz).xyz;`,
+      vHazePos = (modelMatrix * hz).xyz;
+      // Finale only: far scenery straight behind the hangars (bearing 165-285 deg, beyond 38)
+      // flattens into the ground so nothing pokes up through the mist band as a dark speck.
+      float hzDeg = degrees(atan(vHazePos.z, vHazePos.x));
+      hzDeg = hzDeg < 0.0 ? hzDeg + 360.0 : hzDeg;
+      float hzSink = uHazeAmount * step(38.0, length(vHazePos.xz))
+        * step(165.0, hzDeg) * step(hzDeg, 285.0);
+      transformed.y *= 1.0 - hzSink;`,
     );
   shader.fragmentShader = shader.fragmentShader
     .replace(
@@ -33,7 +43,7 @@ export function distanceHaze(shader: WebGLProgramParametersWithUniforms) {
     .replace(
       "#include <fog_fragment>",
       `#ifdef USE_FOG
-        float hzAmt = smoothstep(26.0, 64.0, length(vHazePos.xz)) * uHazeAmount;
+        float hzAmt = smoothstep(50.0, 95.0, length(vHazePos.xz)) * 0.6 * uHazeAmount;
         gl_FragColor.rgb = mix(gl_FragColor.rgb, fogColor, hzAmt);
       #endif
       #include <fog_fragment>`,

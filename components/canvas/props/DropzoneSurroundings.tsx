@@ -1,17 +1,14 @@
 "use client";
 
-import { Instance, Instances, RoundedBox } from "@react-three/drei";
+import { RoundedBox } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { useRef } from "react";
 import type { Group } from "three";
-import { scrollState } from "@/lib/scrollState";
 import { palette } from "@/lib/theme";
 import { Glow } from "../Glow";
 import { Matte } from "../Matte";
 import { Canopy } from "./Canopy";
 import { mulberry32 } from "./CloudField";
-import { haze } from "./distanceHaze";
-import { HazeMaterial } from "./HazeMaterial";
 import { Kit, preloadKit, type KitName } from "./Kit";
 
 /**
@@ -19,8 +16,7 @@ import { Kit, preloadKit, type KitName } from "./Kit";
  * so screen-right is +x,-z and screen-left is -x,+z):
  *  - a little farm on the right: crop rows, a red barn, a silo, hay bales, windmills behind
  *  - a jumpers' campsite on the left: tents in canopy colours, a campfire, bedrolls, a camper van (Kenney Survival/Car kits)
- *  - low hazy hills round the horizon (gap left for the skyline)
- *  - sky life over the landing: two canopy pilots spiralling down, the jump plane circling
+ *  - sky life over the dropzone: two canopy pilots spiralling down, the jump plane circling
  *    back up, and a few birds
  */
 
@@ -31,13 +27,32 @@ const P = (deg: number, r: number): [number, number] => [
   Math.cos((deg * Math.PI) / 180) * r,
   Math.sin((deg * Math.PI) / 180) * r,
 ];
-/**
- * Behind the hangars is what both the landing approach and the finale look at:
- * the farm sits between Hangar 03 and 02 (bearing ~205°), the camp between 02 and 01 (~262°).
- */
-export const FARM_BEARING = [188, 224] as const;
-export const CAMP_BEARING = [246, 280] as const;
+/** The farm sits behind Hangar 03/02 (bearing ~205°), the camp behind 02/01 (~262°). */
 const FARM_C = P(205, 25);
+
+/**
+ * Ground footprints [x, z, radius] of everything placed here, so the tree ring and the
+ * hedgerows can keep clear of them (and only of them: the rest stays wooded).
+ */
+export const FOOTPRINTS: [number, number, number][] = [
+  [FARM_C[0], FARM_C[1], 7.2], // crop field
+  [...P(214, 30), 4.2], // barn + silo
+  [...P(201, 19.2), 2], // tractor
+  [...P(222, 27), 2.4], // flatbed
+  [...P(198, 21), 1.8], // bales
+  [...P(207, 33.5), 1.6], // windmills
+  [...P(219, 34), 1.6],
+  [...P(254, 23.5), 1.8], // tents
+  [...P(263, 26), 1.8],
+  [...P(272, 23.5), 1.8],
+  [...P(263, 22), 2.2], // campfire + bedrolls
+  [...P(246, 19.5), 1], // signpost
+  [...P(250, 20.5), 1.4], // picnic blanket
+  [...P(281, 23), 1.6], // barrels + box
+  [...P(278, 26.5), 2.4], // van
+];
+export const inFootprint = (x: number, z: number, pad = 0) =>
+  FOOTPRINTS.some(([fx, fz, r]) => Math.hypot(x - fx, z - fz) < r + pad);
 
 /* ------------------------------------------------------------------ farm (right) */
 
@@ -51,10 +66,10 @@ for (let row = 0; row < 6; row++) {
     ]);
   }
 }
+/** Two windmills standing in a neat row just behind the barn, facing the camera. */
 const WINDMILLS: [number, number, number][] = [
-  [7, -38, 0.3],
-  [15, -35, -0.2],
-  [23, -31, 0.5],
+  [...P(207, 33.5), Math.PI / 4],
+  [...P(219, 34), Math.PI / 4],
 ];
 const BALES: [number, number, number][] = [
   [...P(198, 20.5), 0.2],
@@ -190,49 +205,7 @@ function Camp() {
   );
 }
 
-/* ------------------------------------------------------------------ hills */
-
-const SKYLINE_ANGLE = Math.atan2(-1, -1);
-const HILLS = Array.from({ length: 30 }, (_, i) => {
-  const a = (i / 30) * Math.PI * 2 + (rand() - 0.5) * 0.15;
-  let d = Math.abs(a - SKYLINE_ANGLE) % (Math.PI * 2);
-  d = Math.min(d, Math.PI * 2 - d);
-  const r = 40 + rand() * 16;
-  const w = 7 + rand() * 7;
-  return {
-    position: [Math.cos(a) * r, -0.6, Math.sin(a) * r] as [number, number, number],
-    scale: [w, 2.2 + rand() * 2.6, w * 0.8] as [number, number, number],
-    keep: d > 0.6,
-  };
-}).filter((h) => h.keep);
-
-function Hills() {
-  const g = useRef<Group>(null);
-  // Only part of the landing view: they rise as the landing haze builds (from above they
-  // would just be pale blobs on the patchwork).
-  useFrame(() => {
-    const o = g.current;
-    if (!o) return;
-    o.scale.y = Math.max(0.001, haze.amount.value);
-    o.visible = haze.amount.value > 0.001;
-  });
-  return (
-    <group ref={g}>
-      <Instances limit={HILLS.length} range={HILLS.length} frustumCulled={false}>
-        <sphereGeometry args={[1, 16, 10]} />
-        <HazeMaterial color="#86A35A" amount={0.62} />
-        {HILLS.map((h, i) => (
-          <Instance key={i} position={h.position} scale={h.scale} />
-        ))}
-      </Instances>
-    </group>
-  );
-}
-
 /* ------------------------------------------------------------------ sky life */
-
-/** 0 -> 1 as the sky life fades in (scales every flyer). */
-const skyLifeIn = { value: 0 };
 
 const PILOTS = [
   { cx: -7, cz: -6, r: 4.5, top: 15, bottom: 3, speed: 0.55, w: 0.45, phase: 0, colors: undefined },
@@ -271,7 +244,7 @@ function CanopyPilot({ spec }: { spec: (typeof PILOTS)[number] }) {
     // Face along the turn; pop in at the top and shrink away just before "landing".
     o.rotation.set(0, -a + (spec.w > 0 ? 0 : Math.PI), Math.sign(spec.w) * 0.25);
     const s = Math.min(1, fall / 0.8, (span - fall) / 1.2) * 0.45;
-    o.scale.setScalar(Math.max(0.001, s * skyLifeIn.value));
+    o.scale.setScalar(Math.max(0.001, s));
   });
   return (
     <group ref={g}>
@@ -296,7 +269,6 @@ function CirclingPlane() {
     const a = state.clock.elapsedTime * 0.12;
     o.position.set(-12 + Math.cos(a) * 26, 24 + Math.sin(a * 2) * 1.5, -12 + Math.sin(a) * 26);
     o.rotation.set(0, -a + Math.PI, 0.3);
-    o.scale.setScalar(Math.max(0.001, skyLifeIn.value));
   });
   return (
     <group ref={g}>
@@ -311,9 +283,8 @@ function Birds() {
   useFrame((state) => {
     const t = state.clock.elapsedTime;
     if (g.current) {
-      const k = ((t * 0.04) % 1) * 2 - 1; // -1 → 1, then wrap
-      g.current.position.set(-30 + k * 40, 13 + Math.sin(t * 0.5), -6 - k * 40);
-      g.current.scale.setScalar(Math.max(0.001, skyLifeIn.value));
+      const k = ((t * 0.018) % 1) * 2 - 1; // -1 → 1, wrapping far out of view
+      g.current.position.set(-12 + k * 140, 13 + Math.sin(t * 0.5), -12 - k * 140);
     }
     wings.current.forEach((w, i) => {
       if (w) w.rotation.z = Math.sin(t * 9 + i) * 0.6;
@@ -349,16 +320,10 @@ function Birds() {
   );
 }
 
-/** Sky life only runs (and shows) from the canopy flight on. */
+/** Always up there: other jumpers landing, the plane going round again, birds. */
 function SkyLife() {
-  const g = useRef<Group>(null);
-  useFrame(() => {
-    const k = Math.min(1, Math.max(0, (scrollState.current - 0.78) / 0.06));
-    skyLifeIn.value = k * k * (3 - 2 * k);
-    if (g.current) g.current.visible = skyLifeIn.value > 0.001;
-  });
   return (
-    <group ref={g} visible={false}>
+    <group>
       {PILOTS.map((p) => (
         <CanopyPilot key={p.cx} spec={p} />
       ))}
@@ -420,12 +385,11 @@ export function DropzoneSurroundings() {
           name="industrial/windmill"
           position={[x, 0, z]}
           rotation={[0, r, 0]}
-          scale={4}
+          scale={3.2}
         />
       ))}
 
       <Camp />
-      <Hills />
       <SkyLife />
     </group>
   );

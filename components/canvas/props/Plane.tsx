@@ -201,9 +201,6 @@ export function Plane({ rampOpen }: PlaneProps) {
       ))}
 
       {/* ---------------- outside: tail, wings, engines, ramp ---------------- */}
-      <RoundedBox args={[0.9, 1.3, 0.14]} position={[1.75, 1.45, -0.9]} radius={0.06} castShadow>
-        <Matte color={HULL} />
-      </RoundedBox>
       <RoundedBox args={[1.3, 0.14, 8.5]} position={[-1.2, -0.25, 0]} radius={0.06} castShadow>
         <Matte color={WALL} />
       </RoundedBox>
