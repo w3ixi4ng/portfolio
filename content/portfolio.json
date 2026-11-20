@@ -1,0 +1,180 @@
+{
+  "profile": {
+    "name": "Lau Wei Xiang",
+    "title": "SWE @ GovTech | SMU Merit Scholar",
+    "pitch": "I build secure, resilient cloud platforms, and I like making infrastructure feel effortless.",
+    "bio": "TODO: replace — 2–3 sentence bio for the About card",
+    "location": "Singapore",
+    "email": "weixiang0124@gmail.com",
+    "links": {
+      "linkedin": "https://linkedin.com/in/lau-wei-xiang",
+      "github": "https://github.com/w3ixi4ng"
+    },
+    "resume": "/resume.pdf",
+    "avatar": {
+      "suitColor": "#994CCD"
+    }
+  },
+  "education": [
+    {
+      "school": "Singapore Management University",
+      "degree": "B.Sc. Information Systems",
+      "start": "Aug 2024",
+      "end": "Apr 2028",
+      "highlights": [
+        "GPA 4.0 / 4.0 (Summa Cum Laude)",
+        "SMU Merit Scholarship",
+        "SCIS Dean's List (All Applicable Years)"
+      ]
+    }
+  ],
+  "experience": [
+    {
+      "company": "SAP",
+      "role": "GTM",
+      "start": "Dec 2027",
+      "end": "Current",
+      "summary": "",
+      "bullets": []
+    },
+    {
+      "company": "GovTech",
+      "team": "GovCloud",
+      "role": "Software Engineer",
+      "start": "May 2026",
+      "end": "Dec 2026",
+      "summary": "Platform security and secrets management across cloud and on-prem.",
+      "bullets": [
+        "Architected a self-hosted secrets-management platform (OpenBao) across AWS and on-prem OpenShift, rolled out HA over 3 clusters via ArgoCD",
+        "Evaluated SPIFFE/SPIRE workload identity; the recommendation shaped the security roadmap",
+        "Designed an OIDC-based, least-privilege access-control framework that closed a cross-tenant risk",
+        "Drove stronger encryption standards (AES-CBC/GCM) across clusters",
+        "Dynamic SSH: per-project signed certificates issued at VM boot, replacing static keys",
+        "CI/CD automation for cluster, team and workload registration and server bootstrapping"
+      ]
+    },
+    {
+      "company": "PCA Company Services",
+      "role": "Software Engineer",
+      "start": "Dec 2025",
+      "end": "Jan 2026",
+      "summary": "Automation that made bookings faster and content output 5×.",
+      "bullets": [
+        "Built a new booking system (FastAPI + React): 40% faster bookings",
+        "Content pipeline (Python, Apps Script, Gemini → WordPress): 1 → 5 articles a week",
+        "Shipped Docker apps on Google Cloud Run"
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "slug": "bidly",
+      "title": "Bidly",
+      "tagline": "A microservices auction platform that stays fair under a bidding frenzy.",
+      "badge": "Dell Cloud Native Finalist",
+      "description": "Auction platform built as microservices on FastAPI, Docker, Kubernetes and ArgoCD, with observability and security baked into the pipeline.",
+      "highlights": [
+        "Fixed a Redis race condition under concurrent bids with atomic Lua scripts",
+        "Prometheus + Grafana observability",
+        "Security-first CI/CD with Trivy and Semgrep",
+        "Kong API Gateway rate-limiting for auction close-out spikes",
+        "RabbitMQ with a Dead Letter Exchange for scheduling"
+      ],
+      "role": "Project Lead",
+      "stack": [
+        "FastAPI",
+        "Docker",
+        "Kubernetes",
+        "ArgoCD",
+        "Redis",
+        "Lua",
+        "RabbitMQ",
+        "Kong",
+        "Prometheus",
+        "Grafana"
+      ],
+      "year": 2026,
+      "period": "Jan – May 2026",
+      "links": {},
+      "thumbnail": "TODO: replace — add a screenshot, e.g. /projects/bidly.png",
+      "islandTheme": "city",
+      "featured": true
+    },
+    {
+      "slug": "platform-migration",
+      "title": "Platform Migration",
+      "tagline": "Multi-cloud Kubernetes so monitoring survives a provider outage.",
+      "badge": "Dell Cloud Native Finalist",
+      "description": "Led a formal evaluation of 5 infrastructure options and landed on multi-cloud Kubernetes, keeping monitoring up even if one provider goes down.",
+      "highlights": [
+        "Formal evaluation of 5 infrastructure options",
+        "Multi-cloud Kubernetes: monitoring survives a provider outage",
+        "Kubernetes CronJob auto-provisions system access for 500+ staff after training"
+      ],
+      "role": "Project Lead",
+      "stack": [
+        "Kubernetes",
+        "Multi-cloud"
+      ],
+      "year": 2026,
+      "period": "Jan – May 2026",
+      "links": {},
+      "thumbnail": "TODO: replace — add a screenshot, e.g. /projects/platform-migration.png",
+      "islandTheme": "forest",
+      "featured": true
+    }
+  ],
+  "skills": [
+    {
+      "group": "Languages",
+      "items": [
+        "Python",
+        "Java",
+        "JavaScript",
+        "PHP",
+        "HTML",
+        "CSS",
+        "SQL",
+        "Lua"
+      ]
+    },
+    {
+      "group": "Frameworks",
+      "items": [
+        "FastAPI",
+        "Flask",
+        "React.js",
+        "Vue.js",
+        "Node.js",
+        "Tailwind CSS",
+        "Bootstrap",
+        "Pandas"
+      ]
+    },
+    {
+      "group": "Infra",
+      "items": [
+        "Docker",
+        "Kubernetes",
+        "OpenShift",
+        "ArgoCD",
+        "RabbitMQ",
+        "Redis",
+        "Kong API Gateway",
+        "WebSocket",
+        "Prometheus",
+        "Grafana"
+      ]
+    }
+  ],
+  "funFacts": [
+    "Gym"
+  ],
+  "settings": {
+    "showResumeDownload": true,
+    "singaporeTouch": true,
+    "easterEggsEnabled": true,
+    "soundDefaultOn": false,
+    "siteUrl": "https://lau-wei-xiang.com"
+  }
+}
