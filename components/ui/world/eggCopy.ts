@@ -2,7 +2,6 @@
 export const EGG_COPY = {
   buddy: "👍 Nailed it!",
   pigeon: "coo?",
-  selfieNoFacts: "📸 Say cheese!",
   packer: "I'M UP! I'm up.",
   reserve: "Cutaway! Main gone, reserve open ✅ That's what it's there for.",
   kopi: "Ahh, kopi-o peng! ☕😌",

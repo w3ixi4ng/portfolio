@@ -105,7 +105,6 @@ export const portfolioSchema = z
     experience: z.array(experienceSchema),
     projects: z.array(projectSchema),
     skills: z.array(skillGroupSchema),
-    funFacts: z.array(nonEmpty("Fun fact")),
     settings: settingsSchema,
   })
   .superRefine((data, ctx) => {

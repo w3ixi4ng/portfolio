@@ -1,12 +1,13 @@
 "use client";
 
-import { useGLTF } from "@react-three/drei";
+import { Instance, Instances, useGLTF } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import { Color, Mesh, MeshStandardMaterial, ShaderMaterial, type Group } from "three";
 import { daylight } from "@/lib/daylight";
-import { useAppStore } from "@/lib/store";
+import { scrollState } from "@/lib/scrollState";
 import { mulberry32 } from "./CloudField";
+import { HazeMaterial } from "./HazeMaterial";
 import { kitUrl, preloadKit, type KitName } from "./Kit";
 
 /**
@@ -175,6 +176,28 @@ const INDUSTRIAL: [KitName, number, number, number, number][] = [
 
 preloadKit([...SKYSCRAPERS, ...MIDRISE, ...SILHOUETTES, ...KAYKIT, ...INDUSTRIAL.map((i) => i[0])]);
 
+const trees = (() => {
+  const r = mulberry32(5);
+  return Array.from({ length: 46 }, (_, i) => ({
+    x: -78 + i * 3.4 + (r() - 0.5) * 2,
+    z: 7 + r() * 4,
+    s: 1.5 + r() * 1.3,
+  }));
+})();
+
+/** Trees in the haze: a park treeline along the skyline's foot, washed toward the horizon colour. */
+function Treeline() {
+  return (
+    <Instances limit={trees.length} range={trees.length}>
+      <icosahedronGeometry args={[1, 1]} />
+      <HazeMaterial color="#7C9A62" amount={0.8} />
+      {trees.map((t, i) => (
+        <Instance key={i} position={[t.x, t.s * 0.8, t.z]} scale={[t.s * 1.1, t.s, t.s * 1.1]} />
+      ))}
+    </Instances>
+  );
+}
+
 const hazeVertex = /* glsl */ `
   varying vec2 vUv;
   void main() {
@@ -218,10 +241,13 @@ function HazeWall() {
 
 /** The whole backdrop, placed behind the dropzone along the camera's far diagonal. */
 export function CityBackdrop() {
-  // Only seen from the canopy flight on; hidden up in the sky where it would float below the plane.
-  const near = useAppStore((s) => s.activeZone === "deployment" || s.activeZone === "dropzone");
+  const root = useRef<Group>(null);
+  // Only for the landing approach: seen from above during the jump it is just flat rows.
+  useFrame(() => {
+    if (root.current) root.current.visible = scrollState.current > 0.88;
+  });
   return (
-    <group visible={near} position={[-54, 0, -54]} rotation={[0, Math.PI / 4, 0]}>
+    <group ref={root} visible={false} position={[-54, 0, -54]} rotation={[0, Math.PI / 4, 0]}>
       {BUILDINGS.map((b, i) => (
         <FarBuilding
           key={i}
@@ -242,6 +268,7 @@ export function CityBackdrop() {
           haze={0.35}
         />
       ))}
+      <Treeline />
       <HazeWall />
     </group>
   );

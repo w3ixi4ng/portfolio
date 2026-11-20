@@ -6,7 +6,6 @@ import { AdminContext } from "./AdminContext";
 import { pathKey, setIn, type Path } from "./paths";
 import { EducationTab } from "./tabs/EducationTab";
 import { ExperienceTab } from "./tabs/ExperienceTab";
-import { FunFactsTab } from "./tabs/FunFactsTab";
 import { ProfileTab } from "./tabs/ProfileTab";
 import { ProjectsTab } from "./tabs/ProjectsTab";
 import { SettingsTab } from "./tabs/SettingsTab";
@@ -20,7 +19,6 @@ const TABS: { key: TabKey; label: string; Component: ComponentType }[] = [
   { key: "experience", label: "Experience", Component: ExperienceTab },
   { key: "projects", label: "Projects", Component: ProjectsTab },
   { key: "skills", label: "Skills", Component: SkillsTab },
-  { key: "funFacts", label: "Fun facts", Component: FunFactsTab },
   { key: "settings", label: "Settings", Component: SettingsTab },
 ];
 

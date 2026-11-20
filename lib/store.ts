@@ -21,7 +21,6 @@ export type PanelRef =
 export const EGGS = [
   "buddy-flip",
   "pigeon",
-  "selfie",
   "windsock",
   "packer",
   "line-twists",

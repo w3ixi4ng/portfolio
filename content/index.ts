@@ -18,7 +18,7 @@ function load(): Portfolio {
 
 export const portfolio: Portfolio = load();
 
-export const { profile, education, experience, projects, skills, funFacts, settings } = portfolio;
+export const { profile, education, experience, projects, skills, settings } = portfolio;
 
 export { isTodo } from "./schema";
 export type * from "./schema";

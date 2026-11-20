@@ -292,14 +292,19 @@ export function Avatar() {
       <WorldHtml
         // Under canopy the bubble floats right above me, clear of the wing (canopy top ≈ 3 up).
         position={phase === "canopy" ? [0, 3.5, 0] : [0, 1.5, 0]}
-        visible={phase === "canopy" || (phase === "landed" && !walking && (atPlaza || drinking))}
+        // On the ground it belongs to the centre of the dropzone only.
+        visible={phase === "canopy" || (phase === "landed" && !walking && !drinking && atPlaza)}
       >
         <AvatarHint
           zone={activeZone}
           landed={phase === "landed"}
           island={null}
-          egg={drinking ? "kopi" : reserveOn ? "reserve" : twisting ? "twists" : null}
+          egg={reserveOn ? "reserve" : twisting ? "twists" : null}
         />
+      </WorldHtml>
+      {/* The kopi line is its own bubble, so it never turns into "touched down" while fading. */}
+      <WorldHtml position={[0, 1.5, 0]} visible={phase === "landed" && drinking}>
+        <AvatarHint zone={activeZone} landed island={null} egg="kopi" />
       </WorldHtml>
     </group>
   );

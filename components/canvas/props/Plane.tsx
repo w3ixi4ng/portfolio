@@ -126,11 +126,11 @@ export function Plane({ rampOpen }: PlaneProps) {
       {/* ---------------- cockpit ---------------- */}
       {/* instrument console */}
       <RoundedBox args={[0.45, 0.4, 1.4]} position={[-3.65, 0.2, 0]} radius={0.05} castShadow>
-        <Matte color="#4A4650" />
+        <Matte color="#8A8794" />
       </RoundedBox>
-      <mesh position={[-3.62, 0.43, 0]} rotation={[0, 0, -0.3]} castShadow>
-        <boxGeometry args={[0.5, 0.05, 1.4]} />
-        <Matte color={palette.ink} />
+      <mesh position={[-3.62, 0.43, 0]} rotation={[0, 0, -0.18]} castShadow>
+        <boxGeometry args={[0.46, 0.04, 1.3]} />
+        <Matte color="#6A6874" />
       </mesh>
       {/* dials facing the pilot */}
       {[-0.45, 0, 0.45].map((z) => (
@@ -160,17 +160,6 @@ export function Plane({ rampOpen }: PlaneProps) {
           <Matte color={palette.ink} />
         </mesh>
       ))}
-      {/* windscreen: one low tinted pane over the dash, no frame sticking out of the hull */}
-      <mesh position={[-3.62, 0.74, 0]} rotation={[0, 0, -0.55]}>
-        <boxGeometry args={[0.025, 0.5, 1.3]} />
-        <meshStandardMaterial
-          color="#BFE6F2"
-          transparent
-          opacity={0.35}
-          roughness={0.1}
-          depthWrite={false}
-        />
-      </mesh>
       {/* pilot's seat: a tub that hides the legs, plus a seat back and headrest */}
       <RoundedBox args={[0.7, 0.5, 0.78]} position={[-2.85, 0.25, 0]} radius={0.08} castShadow>
         <Matte color="#7C4A38" />
