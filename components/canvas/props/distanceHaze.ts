@@ -26,24 +26,7 @@ export function distanceHaze(shader: WebGLProgramParametersWithUniforms) {
       #ifdef USE_INSTANCING
         hz = instanceMatrix * hz;
       #endif
-      vHazePos = (modelMatrix * hz).xyz;
-      // Finale only: far scenery straight behind the hangars (bearing 165-285 deg, beyond 38)
-      // flattens into the ground so nothing pokes up through the mist band as a dark speck.
-      float hzDeg = degrees(atan(vHazePos.z, vHazePos.x));
-      hzDeg = hzDeg < 0.0 ? hzDeg + 360.0 : hzDeg;
-      float hzSink = uHazeAmount * step(38.0, length(vHazePos.xz))
-        * step(165.0, hzDeg) * step(hzDeg, 285.0);
-      // Sink in WORLD space (local y is not "up" for rotated meshes such as the ground disc,
-      // where squashing local y skewed the whole disc and washed it out).
-      if (hzSink > 0.0) {
-        vec4 hw = modelMatrix * hz;
-        hw.y *= 1.0 - hzSink;
-        mat4 hzM = modelMatrix;
-        #ifdef USE_INSTANCING
-          hzM = modelMatrix * instanceMatrix;
-        #endif
-        transformed = (inverse(hzM) * hw).xyz;
-      }`,
+      vHazePos = (modelMatrix * hz).xyz;`,
     );
   shader.fragmentShader = shader.fragmentShader
     .replace(

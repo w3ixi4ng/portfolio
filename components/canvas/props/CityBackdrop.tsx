@@ -220,44 +220,72 @@ const hazeVertex = /* glsl */ `
 const hazeFragment = /* glsl */ `
   uniform vec3 uColor;
   uniform float uFade;
+  uniform float uStrength;
+  uniform float uSeed;
   varying vec2 vUv;
   void main() {
-    // Opaque at the ground, melting away upward through a soft, billowing top edge (no
-    // ruler-straight line): a few layered waves plus a gentle density wobble.
-    float x = vUv.x * 260.0;
-    float edge = 0.42
-      + 0.10 * sin(x * 0.055 + 0.7)
-      + 0.06 * sin(x * 0.13 + 2.1)
-      + 0.035 * sin(x * 0.31 + 4.0);
-    float a = 1.0 - smoothstep(edge - 0.32, edge + 0.05, vUv.y);
-    a *= 0.86 + 0.14 * sin(x * 0.09 + vUv.y * 6.0);
-    a = clamp(a, 0.0, 0.95);
-    gl_FragColor = vec4(uColor, a * uFade);
+    float x = vUv.x * 260.0 + uSeed * 37.0;
+    // Billowing top edge (layered waves), never a ruler-straight line.
+    float edge = 0.55
+      + 0.12 * sin(x * 0.045 + uSeed)
+      + 0.07 * sin(x * 0.11 + 2.1 + uSeed * 1.7)
+      + 0.04 * sin(x * 0.27 + 4.0);
+    float top = 1.0 - smoothstep(edge - 0.45, edge + 0.08, vUv.y);
+    // Thin at the very bottom too, so the layer never shows where it meets the ground: the
+    // ground's own distance haze carries the fade there.
+    float bottom = smoothstep(0.0, 0.3, vUv.y);
+    float a = top * bottom * (0.82 + 0.18 * sin(x * 0.07 + vUv.y * 5.0 + uSeed));
+    gl_FragColor = vec4(uColor, clamp(a, 0.0, 1.0) * uStrength * uFade);
     #include <colorspace_fragment>
   }
 `;
 
-/** A wall of horizon-coloured mist in front of the skyline's base. */
+/**
+ * Layered mist bands at increasing depth, each soft at the top and the bottom. Stacked, they
+ * build up a gradual haze over the far fields and the skyline's base (like real aerial haze),
+ * instead of one wall with an edge.
+ */
+const MIST_LAYERS = [
+  { z: 30, height: 7, strength: 0.32, seed: 0.3 },
+  { z: 22, height: 11, strength: 0.42, seed: 1.9 },
+  { z: 13, height: 18, strength: 0.6, seed: 3.1 },
+  { z: 4, height: 26, strength: 0.55, seed: 4.6 },
+  { z: -8, height: 34, strength: 0.5, seed: 6.2 },
+];
+
 function HazeWall() {
-  const mat = useRef<ShaderMaterial>(null);
+  const mats = useRef<(ShaderMaterial | null)[]>([]);
   useFrame(() => {
-    if (!mat.current) return;
-    mat.current.uniforms.uColor.value.copy(daylight.horizon);
-    mat.current.uniforms.uFade.value = fade.value;
+    for (const m of mats.current) {
+      if (!m) continue;
+      m.uniforms.uColor.value.copy(daylight.horizon);
+      m.uniforms.uFade.value = fade.value;
+    }
   });
   return (
-    <mesh position={[0, 10, 13]} renderOrder={2}>
-      <planeGeometry args={[260, 20]} />
-      <shaderMaterial
-        ref={mat}
-        transparent
-        depthWrite={false}
-        fog={false}
-        uniforms={{ uColor: { value: new Color("#F4CFA4") }, uFade: { value: 0 } }}
-        vertexShader={hazeVertex}
-        fragmentShader={hazeFragment}
-      />
-    </mesh>
+    <>
+      {MIST_LAYERS.map((l, i) => (
+        <mesh key={l.z} position={[0, l.height / 2 - 0.5, l.z]} renderOrder={2 + i}>
+          <planeGeometry args={[300, l.height]} />
+          <shaderMaterial
+            ref={(m) => {
+              mats.current[i] = m;
+            }}
+            transparent
+            depthWrite={false}
+            fog={false}
+            uniforms={{
+              uColor: { value: new Color("#F4CFA4") },
+              uFade: { value: 0 },
+              uStrength: { value: l.strength },
+              uSeed: { value: l.seed },
+            }}
+            vertexShader={hazeVertex}
+            fragmentShader={hazeFragment}
+          />
+        </mesh>
+      ))}
+    </>
   );
 }
 
