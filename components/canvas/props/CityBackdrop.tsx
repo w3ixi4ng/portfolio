@@ -7,12 +7,11 @@ import {
   Box3,
   Color,
   Group,
-  type InstancedMesh,
-  Matrix4,
   Mesh,
   type MeshBasicMaterial,
   MeshStandardMaterial,
   ShaderMaterial,
+  type WebGLProgramParametersWithUniforms,
 } from "three";
 import { daylight } from "@/lib/daylight";
 import { scrollState } from "@/lib/scrollState";
@@ -56,6 +55,41 @@ type Scale = number | [number, number, number];
  */
 const fade = { value: 0 };
 
+/** 0 -> 1 with night: how strongly the skyline's windows glow. Shared uniform. */
+const windowGlow = { value: 0 };
+
+/**
+ * Lights the models' own windows at night: the pack textures paint glass in saturated blues,
+ * so texels that are clearly blue (not grey-blue walls or purple trim) glow warm. A hash of
+ * the window's world cell decides which flats are home, so it varies per window.
+ */
+function winLights(shader: WebGLProgramParametersWithUniforms) {
+  shader.uniforms.uWindowGlow = windowGlow;
+  shader.vertexShader = shader.vertexShader
+    .replace("#include <common>", "#include <common>\nvarying vec3 vWinPos;")
+    .replace(
+      "#include <worldpos_vertex>",
+      "#include <worldpos_vertex>\nvWinPos = (modelMatrix * vec4(transformed, 1.0)).xyz;",
+    );
+  shader.fragmentShader = shader.fragmentShader
+    .replace(
+      "#include <common>",
+      "#include <common>\nvarying vec3 vWinPos;\nuniform float uWindowGlow;",
+    )
+    .replace(
+      "#include <emissivemap_fragment>",
+      `#include <emissivemap_fragment>
+      #ifdef USE_MAP
+        vec3 tex = texture2D(map, vMapUv).rgb;
+        float glass = step(0.2, tex.b - tex.r) * step(tex.r - 0.02, tex.g);
+        vec3 cell = floor(vWinPos / vec3(2.2, 0.75, 2.2));
+        float home = step(0.62, fract(sin(dot(cell, vec3(12.9898, 78.233, 37.719))) * 43758.5453));
+        totalEmissiveRadiance += vec3(1.0, 0.78, 0.42) * glass * home * uWindowGlow * 0.95;
+        diffuseColor.rgb *= 1.0 - glass * (1.0 - home) * uWindowGlow * 0.6;
+      #endif`,
+    );
+}
+
 function FarBuilding({
   name,
   position,
@@ -72,34 +106,22 @@ function FarBuilding({
 }) {
   const { scene } = useGLTF(kitUrl(name));
   const group = useRef<Group>(null);
-  const lights = useRef<InstancedMesh>(null);
   const beacon = useRef<Mesh>(null);
-  /** Lit windows on the face toward the camera, plus a roof beacon on tall towers. */
+  /** A blinking roof beacon on tall towers (window lights live in the material: winLights). */
   const night = useMemo(() => {
     const probe = new Group();
     const c = scene.clone(true);
     c.rotation.y = rotationY;
     probe.add(c);
     const box = new Box3().setFromObject(probe);
-    const r = mulberry32(Math.round(position[0] * 97 + position[2] * 31));
-    const w = box.max.x - box.min.x;
     const h = box.max.y - box.min.y;
-    const wins: Matrix4[] = [];
-    const n = Math.round(4 + h * 10);
-    for (let i = 0; i < n; i++) {
-      if (r() < 0.45) continue; // not every flat is home
-      const x = box.min.x + w * (0.12 + r() * 0.76);
-      const y = box.min.y + h * (0.12 + r() * 0.8);
-      wins.push(new Matrix4().makeTranslation(x, y, box.max.z + 0.01));
-    }
     return {
-      wins,
       top: box.max.y,
       cx: (box.min.x + box.max.x) / 2,
       cz: (box.min.z + box.max.z) / 2,
       tall: h > 1.6,
     };
-  }, [scene, rotationY, position]);
+  }, [scene, rotationY]);
   const obj = useMemo(() => {
     const c = scene.clone(true);
     const list: MeshStandardMaterial[] = [];
@@ -110,6 +132,8 @@ function FarBuilding({
       m.transparent = true; // fades in with the landing approach
       m.emissive = new Color("#ffffff");
       m.emissiveMap = m.map;
+      m.onBeforeCompile = winLights;
+      m.customProgramCacheKey = () => "far-windows";
       o.material = m;
       o.castShadow = false;
       list.push(m);
@@ -122,10 +146,7 @@ function FarBuilding({
     const list = group.current?.children[0]?.userData.mats as MeshStandardMaterial[] | undefined;
     if (!list) return;
     const lit = daylight.night * fade.value;
-    if (lights.current) {
-      lights.current.visible = lit > 0.02;
-      (lights.current.material as MeshBasicMaterial).opacity = lit;
-    }
+    windowGlow.value = daylight.night;
     if (beacon.current) {
       const blink = Math.sin(performance.now() * 0.004 + position[0]) > 0.4 ? 1 : 0.15;
       beacon.current.visible = lit > 0.02;
@@ -144,29 +165,6 @@ function FarBuilding({
       <group ref={group} rotation={[0, rotationY, 0]}>
         <primitive object={obj} />
       </group>
-      {night.wins.length > 0 && (
-        <instancedMesh
-          ref={(m) => {
-            lights.current = m;
-            if (m) {
-              night.wins.forEach((mat, i) => m.setMatrixAt(i, mat));
-              m.instanceMatrix.needsUpdate = true;
-            }
-          }}
-          args={[undefined, undefined, night.wins.length]}
-          visible={false}
-          frustumCulled={false}
-        >
-          <planeGeometry args={[0.07, 0.05]} />
-          <meshBasicMaterial
-            color="#FFD58A"
-            transparent
-            opacity={0}
-            fog={false}
-            toneMapped={false}
-          />
-        </instancedMesh>
-      )}
       {night.tall && (
         <mesh ref={beacon} position={[night.cx, night.top + 0.03, night.cz]} visible={false}>
           <sphereGeometry args={[0.035, 8, 6]} />

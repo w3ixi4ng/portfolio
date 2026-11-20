@@ -96,7 +96,7 @@ export function Panel({ open, onClose, onBack, title, children }: PanelProps) {
                 ✕
               </button>
             </div>
-            <div className="max-h-[64vh] overflow-y-auto pr-1 sm:max-h-[66vh]">{children}</div>
+            <div className="-mx-1 max-h-[64vh] overflow-y-auto p-1 sm:max-h-[66vh]">{children}</div>
           </motion.div>
         </motion.div>
       )}
