@@ -67,10 +67,7 @@ function winLights(shader: WebGLProgramParametersWithUniforms) {
   shader.uniforms.uWindowGlow = windowGlow;
   shader.vertexShader = shader.vertexShader
     .replace("#include <common>", "#include <common>\nvarying vec3 vWinPos;")
-    .replace(
-      "#include <worldpos_vertex>",
-      "#include <worldpos_vertex>\nvWinPos = (modelMatrix * vec4(transformed, 1.0)).xyz;",
-    );
+    .replace("#include <worldpos_vertex>", "#include <worldpos_vertex>\nvWinPos = transformed;");
   shader.fragmentShader = shader.fragmentShader
     .replace(
       "#include <common>",
@@ -81,11 +78,20 @@ function winLights(shader: WebGLProgramParametersWithUniforms) {
       `#include <emissivemap_fragment>
       #ifdef USE_MAP
         vec3 tex = texture2D(map, vMapUv).rgb;
-        float glass = step(0.2, tex.b - tex.r) * step(tex.r - 0.02, tex.g);
-        vec3 cell = floor(vWinPos / vec3(2.2, 0.75, 2.2));
-        float home = step(0.62, fract(sin(dot(cell, vec3(12.9898, 78.233, 37.719))) * 43758.5453));
-        totalEmissiveRadiance += vec3(1.0, 0.78, 0.42) * glass * home * uWindowGlow * 0.95;
-        diffuseColor.rgb *= 1.0 - glass * (1.0 - home) * uWindowGlow * 0.6;
+        // Soft mask, so filtered texel edges fade instead of sparkling.
+        float glass = smoothstep(0.12, 0.3, tex.b - tex.r) * smoothstep(-0.06, 0.04, tex.g - tex.r);
+        // One cell ~ one flat (object space, so it never shifts as things move).
+        vec3 cell = floor(vWinPos / vec3(0.34, 0.2, 0.34));
+        vec3 q = fract(cell * vec3(0.1031, 0.1030, 0.0973));
+        q += dot(q, q.yxz + 33.33);
+        float h = fract((q.x + q.y) * q.z);
+        // Flats switch on one by one as night deepens: about a quarter end up lit.
+        float home = step(h, uWindowGlow * 0.27);
+        // Warm lamps, a few cooler (TV / white light), varied brightness.
+        float h2 = fract(h * 7.31);
+        vec3 lamp = mix(vec3(1.0, 0.72, 0.38), vec3(0.85, 0.9, 1.0), step(0.8, h2));
+        totalEmissiveRadiance += lamp * glass * home * (0.45 + 0.4 * h2);
+        diffuseColor.rgb *= 1.0 - glass * (1.0 - home) * uWindowGlow * 0.55;
       #endif`,
     );
 }
@@ -96,6 +102,7 @@ function FarBuilding({
   scale,
   rotationY = 0,
   haze,
+  lights = false,
 }: {
   name: KitName;
   position: [number, number, number];
@@ -103,6 +110,8 @@ function FarBuilding({
   rotationY?: number;
   /** 0 = barely hazed, 1 = nearly lost in it. */
   haze: number;
+  /** Lit windows at night (only the proper towers/blocks; not silhouettes or industry). */
+  lights?: boolean;
 }) {
   const { scene } = useGLTF(kitUrl(name));
   const group = useRef<Group>(null);
@@ -132,15 +141,17 @@ function FarBuilding({
       m.transparent = true; // fades in with the landing approach
       m.emissive = new Color("#ffffff");
       m.emissiveMap = m.map;
-      m.onBeforeCompile = winLights;
-      m.customProgramCacheKey = () => "far-windows";
+      if (lights) {
+        m.onBeforeCompile = winLights;
+        m.customProgramCacheKey = () => "far-windows";
+      }
       o.material = m;
       o.castShadow = false;
       list.push(m);
     });
     c.userData.mats = list;
     return c;
-  }, [scene]);
+  }, [scene, lights]);
 
   useFrame(() => {
     const list = group.current?.children[0]?.userData.mats as MeshStandardMaterial[] | undefined;
@@ -188,6 +199,7 @@ interface Spec {
   s: Scale;
   rot?: number;
   haze: number;
+  lights?: boolean;
 }
 
 function build(): Spec[] {
@@ -216,7 +228,7 @@ function build(): Spec[] {
     [3, 29, -7, 4.6],
     [1, 38, -5, 4.2],
   ].forEach(([i, x, z, s]) =>
-    out.push({ name: SKYSCRAPERS[i], x, z: z + (rand() - 0.5), s, haze: 0.5 }),
+    out.push({ name: SKYSCRAPERS[i], x, z: z + (rand() - 0.5), s, haze: 0.5, lights: true }),
   );
   // mid-rise row across the front of the city
   for (let x = -78, i = 0; x <= 34; x += 6.3, i++) {
@@ -227,6 +239,7 @@ function build(): Spec[] {
       s: 4.2 + rand() * 0.9,
       rot: Math.floor(rand() * 4) * (Math.PI / 2),
       haze: 0.32,
+      lights: true,
     });
   }
   // KayKit buildings on the left flank, in front of the mid-rise row
@@ -393,6 +406,7 @@ export function CityBackdrop() {
           scale={b.s}
           rotationY={b.rot}
           haze={b.haze}
+          lights={b.lights}
         />
       ))}
       {INDUSTRIAL.map(([name, x, z, s, rot], i) => (
