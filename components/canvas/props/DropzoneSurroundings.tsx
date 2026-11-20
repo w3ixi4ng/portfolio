@@ -9,6 +9,7 @@ import { Glow } from "../Glow";
 import { Matte } from "../Matte";
 import { Canopy } from "./Canopy";
 import { mulberry32 } from "./CloudField";
+import { distanceHaze, distanceHazeKey } from "./distanceHaze";
 import { Kit, preloadKit, type KitName } from "./Kit";
 
 /**
@@ -205,6 +206,52 @@ function Camp() {
   );
 }
 
+/* ------------------------------------------------------------------ hills */
+
+/** Gentle grassy hills round the airfield (a gap is left where the skyline stands). */
+export const HILLS: { x: number; z: number; w: number; d: number; h: number }[] = (() => {
+  const r = mulberry32(4242);
+  const out: { x: number; z: number; w: number; d: number; h: number }[] = [];
+  for (let i = 0; i < 14; i++) {
+    const deg = (i / 14) * 360 + (r() - 0.5) * 12;
+    // skip the skyline's direction (~225 deg) and the camera side (~45 deg)
+    const off = (a: number) => Math.min(Math.abs(deg - a), 360 - Math.abs(deg - a));
+    // (the finale looks across 160-290 deg at the skyline's mist: nothing there)
+    if (off(225) < 65 || off(45) < 35) continue;
+    const [x, z] = P(deg, 44 + r() * 12);
+    const hill = { x, z, w: 8 + r() * 6, d: 6 + r() * 4, h: 3 + r() * 3 };
+    // keep clear of the HDB estate and of anything the farm/camp put down
+    const inEllipse = (px: number, pz: number, pad: number) =>
+      ((px - hill.x) / (hill.w + pad)) ** 2 + ((pz - hill.z) / (hill.d + pad)) ** 2 < 1;
+    const hdb = [-38, -24, -10].some((hx) => [18, 27, 36].some((hz) => inEllipse(hx, hz, 4)));
+    const props = FOOTPRINTS.some(([fx, fz, fr]) => inEllipse(fx, fz, fr + 1));
+    if (hdb || props) continue;
+    out.push(hill);
+  }
+  return out;
+})();
+/** Is (x, z) on a hill (plus a margin)? Houses and hedgerows stay off them. */
+export const onHill = (x: number, z: number, pad = 1.5) =>
+  HILLS.some((h) => ((x - h.x) / (h.w + pad)) ** 2 + ((z - h.z) / (h.d + pad)) ** 2 < 1);
+
+function Hills() {
+  return (
+    <group>
+      {HILLS.map((h, i) => (
+        <mesh key={i} position={[h.x, -0.2, h.z]} scale={[h.w, h.h, h.d]} receiveShadow>
+          <sphereGeometry args={[1, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2]} />
+          <meshStandardMaterial
+            color="#86A35A"
+            roughness={1}
+            onBeforeCompile={distanceHaze}
+            customProgramCacheKey={distanceHazeKey}
+          />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
 /* ------------------------------------------------------------------ sky life */
 
 const PILOTS = [
@@ -390,6 +437,7 @@ export function DropzoneSurroundings() {
       ))}
 
       <Camp />
+      <Hills />
       <SkyLife />
     </group>
   );

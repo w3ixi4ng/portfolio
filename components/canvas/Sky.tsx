@@ -104,8 +104,8 @@ export function Sky() {
     // Aerial haze: the ground is soft and hazy from 13,000 ft and sharpens as you fall.
     if (fog.current) {
       fog.current.color.copy(bottom);
-      fog.current.near = lerp(28, 70, altitude / 13000);
-      fog.current.far = lerp(95, 330, altitude / 13000);
+      fog.current.near = lerp(70, 90, altitude / 13000);
+      fog.current.far = lerp(320, 420, altitude / 13000);
     }
   });
 

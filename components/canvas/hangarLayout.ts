@@ -52,10 +52,16 @@ export const HANGARS: readonly HangarSpec[] = [
 /** Yaw that makes a hangar's door (local +z) face the plaza. */
 export const facing = (h: { x: number; z: number }) => Math.atan2(PLAZA[0] - h.x, PLAZA[1] - h.z);
 
-/** Where the avatar stops: just inside the door. */
-export function doorPoint(h: HangarSpec, inside = 1.5): [number, number] {
+/**
+ * Where the avatar stops: just inside the open half of the doorway. The sliding door covers
+ * the right of the opening (local +x), so aim at the dark gap on the left (local x = -0.6).
+ */
+export function doorPoint(h: HangarSpec, inside = 1.5, side = -0.6): [number, number] {
   const r = facing(h);
-  return [h.x + Math.sin(r) * inside, h.z + Math.cos(r) * inside];
+  return [
+    h.x + Math.cos(r) * side + Math.sin(r) * inside,
+    h.z - Math.sin(r) * side + Math.cos(r) * inside,
+  ];
 }
 
 /** The kopi stall: front-left, facing the camera. The avatar walks to its counter to drink. */
